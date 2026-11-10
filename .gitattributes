@@ -1,0 +1,32 @@
+# 行尾策略：统一以 LF 存储与检出。
+#
+# 为什么不用 Git 默认的 core.autocrlf（Windows 上为 true）：它会在每次 add 时
+# 提示 "LF will be replaced by CRLF the next time Git touches it"，且行尾随
+# 各人配置漂移——同一文件在不同机器上反复变成整文件 diff，合并冲突多发。
+# 这里用 .gitattributes 把策略写进仓库，任何人的 Git 都以同一规则处理。
+#
+# 代价与例外：Windows 批处理 / PowerShell 脚本必须是 CRLF（cmd.exe 解析
+# LF-only 批处理有已知问题），故下面单列；shell 脚本强制 LF。
+
+* text=auto eol=lf
+
+# Windows 批处理 / PowerShell：强制 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Shell 脚本：强制 LF（bash 在 CRLF 下会出现 $'\r' 错误）
+*.sh text eol=lf
+
+# 二进制：不做任何文本/行尾转换
+*.png binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.exe binary
+*.dll binary
+*.zip binary
+*.pdf binary
+*.sig binary

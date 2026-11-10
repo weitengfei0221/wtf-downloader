@@ -1,0 +1,142 @@
+/* AddTaskDialog 样式（独立文件以遵守单文件 ≤300 行硬约束；颜色一律 Token） */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--fg-2);
+}
+
+.url-input {
+  min-height: 64px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--fg);
+  resize: vertical;
+  transition: border-color var(--motion-fast) var(--ease-standard);
+}
+
+.filename-input {
+  height: 32px;
+  padding: 0 var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--fg);
+  transition: border-color var(--motion-fast) var(--ease-standard);
+}
+
+.input-invalid {
+  border-color: var(--danger);
+}
+
+.error {
+  font-size: var(--text-xs);
+  color: var(--danger);
+}
+
+.helper {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.meta-note {
+  font-size: var(--text-xs);
+  color: var(--meta);
+}
+
+.probe-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.still-add {
+  align-self: flex-start;
+}
+
+/* 文件信息行（只读）：大小 mono + Range 探测结果 */
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.info-size {
+  color: var(--fg-2);
+}
+
+.info-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--success);
+}
+
+.info-warn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--warn);
+}
+
+/* HTTP 未加密警示行（Spec §10 降级确认） */
+.http-warn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--warn-soft);
+  font-size: var(--text-xs);
+  color: var(--warn);
+}
+
+/* 提交失败内联错误条（弹窗不关，AC-02） */
+.add-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--danger);
+}
+
+/* 底部按钮区（#footer 插槽，固定不滚）：顶部 1px --border-soft 分隔 + 上方 16px。
+   margin-top 24px = 原 form 内 gap 16px + 原 margin 8px：移出 form 后间距不丢。
+   单行三元素：hint 靠最左（margin-right:auto 把后两个按钮顶到右侧），
+   hint 不存在时（多 URL / 未探测成功）取消 + 开始下载仍靠右。 */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-soft);
+}
+
+.parallel-hint {
+  margin-right: auto;
+  font-size: var(--text-xs);
+  color: var(--meta);
+}

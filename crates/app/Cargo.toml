@@ -1,0 +1,43 @@
+[package]
+name = "app"
+description = "wtf-downloader Tauri bridge layer"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "wtf_downloader_app"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2.12", features = ["tray-icon"] }
+tauri-plugin-single-instance = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-dialog = "2"
+# Updater: signature verification is mandatory and cannot be disabled. Public
+# key lives in tauri.conf.json (content, not a path); the private key is only
+# supplied at build time via TAURI_SIGNING_PRIVATE_KEY, never committed.
+tauri-plugin-updater = "2"
+downloader-engine = { path = "../downloader-engine" }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+async-trait = { workspace = true }
+url = { workspace = true }
+
+# Notification identity (see src/notify/mod.rs). windows-sys rather than the
+# full `windows` crate: only two shell entry points are needed, so this keeps
+# the compile surface small. Both versions are the ones already resolved in
+# Cargo.lock (windows-sys via tauri, windows-registry and
+# tauri-winrt-notification via the notification plugin), so no new major
+# version enters the graph.
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_UI_Shell", "Win32_System_Com"] }
+windows-registry = "0.6"
+tauri-winrt-notification = "0.8"

@@ -1,0 +1,107 @@
+{
+  "$meta": {
+    "project": "wtf-downloader",
+    "version": "1.0.0",
+    "generated": "2026-10-23",
+    "author": "设计师 颜好看",
+    "source": "docs/SPEC.md §8（v4 黑灰中性 / PrimeVue 风品牌色，27 个锁定 Token）+ docs/phase1/UIUX设计方向.md v4",
+    "note": "本文件是项目唯一 Token 源。design-tokens.css 由本文件生成（禁手改 css，改值先改这里）。所有颜色 token 均含 light/dark 双主题值；主题策略：深色优先、跟随系统 prefers-color-scheme，应用启动后由 Tauri 主题监听在 <html> 上写入 data-theme 显式覆盖。",
+    "layers": {
+      "A1-identity": "品牌核心，不可省略",
+      "A2-structure": "结构层（语义色/焦点/阴影/动效），有默认值",
+      "B-slot": "插槽别名（次级面板/次级文本/三级元数据等）",
+      "C-extension": "项目专属扩展（soft 底色、图表灰阶、Mica 预留等）"
+    }
+  },
+  "color": {
+    "bg":             { "value": "#F7F8FA", "dark": "#0B0D10", "type": "color", "layer": "A1-identity", "usage": "窗口背景（近黑微蓝调收敛，非纯黑）" },
+    "surface":        { "value": "#FFFFFF", "dark": "#111419", "type": "color", "layer": "A1-identity", "usage": "列表行/卡片/输入框背景" },
+    "surface-2":      { "value": "#EEF0F4", "dark": "#191D23", "type": "color", "layer": "B-slot", "usage": "hover 行背景、次级面板、输入框底" },
+    "surface-3":      { "value": "#E7E9EE", "dark": "#21252C", "type": "color", "layer": "B-slot", "usage": "按下态、下拉菜单底、badge 中性底" },
+    "fg":             { "value": "#16181D", "dark": "#EDF0F4", "type": "color", "layer": "A1-identity", "usage": "主文本（文件名、标题、主按钮反白文字场景见 primary-fg）" },
+    "fg-2":           { "value": "#3D434D", "dark": "#B9C0CC", "type": "color", "layer": "B-slot", "usage": "次级文本（大小、路径、速度、百分比）" },
+    "muted":          { "value": "#666E7A", "dark": "#8B93A1", "type": "color", "layer": "A1-identity", "usage": "副文本（状态说明、提示、已暂停进度条）" },
+    "meta":           { "value": "#9AA2AE", "dark": "#5F6774", "type": "color", "layer": "B-slot", "usage": "三级元数据（时间戳、等待轨道，仅 ≥12px 短标签，不用于正文）" },
+    "border":         { "value": "#E4E7EC", "dark": "#22262E", "type": "color", "layer": "A1-identity", "usage": "卡片/分隔 hairline 边框（1px）" },
+    "border-soft":    { "value": "#EEF0F4", "dark": "rgba(255,255,255,0.06)", "type": "color", "layer": "B-slot", "usage": "列表行内分隔线" },
+    "primary-bg":     { "value": "#111417", "dark": "#F5F6F8", "type": "color", "layer": "A1-identity", "usage": "主操作色（最高对比度中性色）：主按钮/激活态填充、下载中进度条、图标选中圆角块。每屏实心 ≤2 处" },
+    "primary-fg":     { "value": "#FFFFFF", "dark": "#0B0D10", "type": "color", "layer": "A2-structure", "usage": "primary 填充上的文字与图标" },
+    "primary-hover":  { "value": "#33373D", "dark": "#E2E5EA", "type": "color", "layer": "A2-structure", "usage": "primary 悬停态" },
+    "primary-active": { "value": "#0B0D0E", "dark": "#FFFFFF", "type": "color", "layer": "A2-structure", "usage": "primary 按下态" },
+    "primary-soft":   { "value": "#E9EBEF", "dark": "rgba(237,240,244,0.10)", "type": "color", "layer": "C-extension", "usage": "选中行背景、图标选中态的 soft 变体" },
+    "success":        { "value": "#059669", "dark": "#34D399", "type": "color", "layer": "A2-structure", "usage": "完成徽章文字/图标、完成态进度条（仅小面积）" },
+    "success-soft":   { "value": "#D1FAE5", "dark": "rgba(52,211,153,0.12)", "type": "color", "layer": "C-extension", "usage": "完成 badge 底色" },
+    "warn":           { "value": "#D97706", "dark": "#FBBF24", "type": "color", "layer": "A2-structure", "usage": "限速中/重试中徽章文字（仅小面积）" },
+    "warn-soft":      { "value": "#FEF3C7", "dark": "rgba(251,191,36,0.12)", "type": "color", "layer": "C-extension", "usage": "警告 badge 底色" },
+    "danger":         { "value": "#DC2626", "dark": "#F87171", "type": "color", "layer": "A2-structure", "usage": "失败徽章/错误文本/删除操作（仅小面积与文字）" },
+    "danger-soft":    { "value": "#FEE2E2", "dark": "rgba(248,113,113,0.12)", "type": "color", "layer": "C-extension", "usage": "失败 badge 底色、错误行背景" },
+    "progress-track": { "value": "#E4E7EC", "dark": "#1D2128", "type": "color", "layer": "C-extension", "usage": "进度条轨道（4px 高）" },
+    "focus-ring":     { "value": "0 0 0 3px rgba(17,20,23,0.35)", "dark": "0 0 0 3px rgba(245,246,248,0.40)", "type": "boxShadow", "layer": "A2-structure", "usage": "键盘焦点环（:focus-visible）" },
+    "elev-raised":    { "value": "0 4px 16px rgba(22,24,29,0.10)", "dark": "0 8px 32px rgba(0,0,0,0.45)", "type": "boxShadow", "layer": "A2-structure", "usage": "弹窗/下拉投影（唯一一级投影）" },
+    "chart-1":        { "value": "rgba(22,24,29,0.90)", "dark": "rgba(237,240,244,0.90)", "type": "color", "layer": "C-extension", "usage": "数据可视化灰阶阶梯第 1 层（最深；MVP 不实现、仅锁定命名）" },
+    "chart-2":        { "value": "rgba(22,24,29,0.55)", "dark": "rgba(237,240,244,0.55)", "type": "color", "layer": "C-extension", "usage": "数据可视化灰阶阶梯第 2 层（MVP 不实现）" },
+    "chart-3":        { "value": "rgba(22,24,29,0.30)", "dark": "rgba(237,240,244,0.30)", "type": "color", "layer": "C-extension", "usage": "数据可视化灰阶阶梯第 3 层（最浅；MVP 不实现）" },
+    "bg-translucent": { "value": "rgba(247,248,250,0.88)", "dark": "rgba(11,13,16,0.88)", "type": "color", "layer": "C-extension", "usage": "Mica 半透明预留（Phase 1 §9.1 要求落档；MVP 不启用、原生标题栏，--bg 为不透明色）" },
+    "overlay":        { "value": "rgba(22,24,29,0.45)", "dark": "rgba(0,0,0,0.60)", "type": "color", "layer": "C-extension", "usage": "模态弹窗遮罩（添加任务弹窗/确认弹窗背景层）" }
+  },
+  "font": {
+    "family": {
+      "display": { "value": "Inter, Noto Sans SC, Microsoft YaHei UI, system-ui, sans-serif", "type": "fontFamily", "usage": "标题/按钮/界面文字（woff2 子集内嵌，保留系统回退栈）" },
+      "body":    { "value": "Inter, Noto Sans SC, Microsoft YaHei UI, system-ui, sans-serif", "type": "fontFamily", "usage": "正文" },
+      "mono":    { "value": "JetBrains Mono, Cascadia Mono, Consolas, monospace", "type": "fontFamily", "usage": "速度/文件大小/剩余时间/百分比/URL/路径——所有实时刷新数字" }
+    },
+    "weight": {
+      "regular": { "value": 400, "type": "fontWeight", "usage": "正文、描述、元数据" },
+      "medium":  { "value": 500, "type": "fontWeight", "usage": "小标题、按钮、文件名、窗口标题（层级靠字号+字距表达，不新增 600）" }
+    },
+    "size": {
+      "xs":   { "value": "12px", "type": "dimension", "usage": "元数据行、badge、helper text" },
+      "sm":   { "value": "13px", "type": "dimension", "usage": "输入框、按钮、次级正文、toast" },
+      "base": { "value": "14px", "type": "dimension", "usage": "文件名、列表主文本" },
+      "md":   { "value": "16px", "type": "dimension", "usage": "窗口/弹窗标题、App 名" },
+      "lg":   { "value": "18px", "type": "dimension", "usage": "空状态主文案（预留）" },
+      "xl":   { "value": "20px", "type": "dimension", "usage": "预留（工具类 MVP 不使用）" },
+      "2xl":  { "value": "24px", "type": "dimension", "usage": "空状态主图标内边距场景（预留）" }
+    },
+    "numeric": { "value": "tabular-nums", "type": "string", "usage": "所有实时刷新数字强制 font-variant-numeric: tabular-nums，防 4Hz 刷新跳动" }
+  },
+  "spacing": {
+    "1": { "value": "4px",  "type": "dimension", "usage": "图标与文字间隙" },
+    "2": { "value": "8px",  "type": "dimension", "usage": "同组元素间隙（进度条与百分比）" },
+    "3": { "value": "12px", "type": "dimension", "usage": "任务行上下内边距、列表项标准间距" },
+    "4": { "value": "16px", "type": "dimension", "usage": "任务行左右内边距、顶栏/弹窗水平边距、舒适间距" },
+    "6": { "value": "24px", "type": "dimension", "usage": "弹窗内边距、设置组间距" },
+    "8": { "value": "32px", "type": "dimension", "usage": "设置页组间大间距" }
+  },
+  "radius": {
+    "sm":   { "value": "6px",   "type": "dimension", "usage": "badge、速度 chip、小图标块" },
+    "md":   { "value": "8px",   "type": "dimension", "usage": "按钮、输入框、任务行、下拉菜单" },
+    "lg":   { "value": "12px",  "type": "dimension", "usage": "卡片、弹窗（对齐 Windows 11 Fluent；禁 ≥24px）" },
+    "full": { "value": "9999px", "type": "dimension", "usage": "进度条、圆形图标按钮、胶囊 badge" }
+  },
+  "icon": {
+    "library": { "value": "@lucide/vue", "type": "string", "usage": "唯一图标库（禁 lucide-vue-next 与任何第二套）；24px 网格 / 圆头描边 / currentColor" },
+    "size": {
+      "sm": { "value": "16px", "type": "dimension", "usage": "行内图标（按钮内、任务行操作、输入框前缀）" },
+      "md": { "value": "20px", "type": "dimension", "usage": "顶栏独立图标按钮（设置入口）" },
+      "lg": { "value": "24px", "type": "dimension", "usage": "空状态主视觉图标" }
+    },
+    "strokeWidth": { "value": 2, "type": "number", "usage": "全项目统一 2px 描边（与 Lucide 24px 网格基准一致）" }
+  },
+  "motion": {
+    "fast":   { "value": "150ms", "type": "duration", "usage": "收敛基准：hover/active/状态切换/操作反馈" },
+    "base":   { "value": "200ms", "type": "duration", "usage": "弹窗进入、任务行进入（fade + slide 8px）、完成对勾缩放" },
+    "max":    { "value": "300ms", "type": "duration", "usage": "动效上限（禁超；跨屏过渡用）" },
+    "ease":   { "value": "cubic-bezier(0.2, 0, 0, 1)", "type": "easing", "usage": "标准缓动（禁弹跳曲线）" },
+    "progressFill": { "value": "250ms linear", "type": "duration", "usage": "进度条 width 过渡（匹配 4Hz 帧间隔做平滑插值，linear 防 4 帧抖动）" },
+    "reducedMotion": { "value": "prefers-reduced-motion: reduce → 全部动效退化为瞬切（0ms）", "type": "string", "usage": "无障碍硬性要求" }
+  },
+  "zIndex": {
+    "dropdown": { "value": 1000, "type": "number", "usage": "下拉菜单/Popover（限速菜单、更多菜单）" },
+    "modal":    { "value": 1200, "type": "number", "usage": "添加任务弹窗/确认弹窗" },
+    "toast":    { "value": 1300, "type": "number", "usage": "Toast（最顶层）" }
+  },
+  "format": {
+    "unit": { "value": "十进制（1 MB = 1000 KB）", "type": "string", "usage": "速度/大小单位对齐 Windows/macOS 系统惯例（项目总监 2026-10-23 裁决）" }
+  }
+}

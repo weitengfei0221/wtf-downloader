@@ -1,0 +1,108 @@
+/* TaskListView 样式（独立文件以遵守单文件 ≤300 行硬约束；颜色一律 Token） */
+
+.view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* 列表滚动区：上 8px、左右 16px；行间 8px 间距（不用分隔线）。
+   user-select:none 是框选（§2.9）与 Shift 连选的前置条件：拖框过程不出现蓝色文本高亮；
+   base.css 的 input/textarea 规则兜底，行外输入控件仍可选字。 */
+.list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-2) var(--space-4) var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  user-select: none;
+}
+
+/* ---- Loading：3 条骨架行（高 80px，shimmer 周期 1.2s） ---- */
+.skeletons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  justify-content: center;
+  min-height: 80px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  overflow: hidden;
+  position: relative;
+}
+
+.sk-line {
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+  position: relative;
+  overflow: hidden;
+}
+
+.sk-title {
+  height: 14px;
+  width: 40%;
+}
+
+.sk-bar {
+  height: 4px;
+  width: 100%;
+}
+
+.sk-meta {
+  height: 12px;
+  width: 55%;
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent, var(--surface), transparent);
+  animation: shimmer 1.2s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* ---- Error / Empty 居中结构 ---- */
+.center {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  text-align: center;
+}
+
+.center-icon {
+  color: var(--meta);
+  margin-bottom: var(--space-2);
+}
+
+.center-title {
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--fg-2);
+}
+
+.center-sub {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  max-width: 48ch;
+  line-height: 1.5;
+}

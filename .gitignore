@@ -1,0 +1,37 @@
+# ---- Rust / Tauri 构建产物 ----
+/target/
+**/target/
+
+# Tauri 自动生成的 ACL manifest（每次 cargo build 重写，入库会产生持续 diff 噪音；
+# Tauri v2 官方模板同样忽略 /gen/schemas）
+crates/app/gen/schemas/
+
+# ---- 前端 ----
+ui/node_modules/
+ui/dist/
+node_modules/
+
+# ---- 更新签名密钥（最高优先级：绝不能入库）----
+# 私钥在用户主目录 ~/.tauri/ 下，此规则是防止误复制进仓库的第二道防线
+.tauri/
+*.key
+*.key.pub
+*.sig
+.env
+.env.*
+!.env.example
+
+# ---- AI 工具的本机工作数据（只排除提交，不删除）----
+# .workbuddy/ 是项目记忆与会话状态，不是临时缓存：含本机路径、内部决策复盘、
+# 验收冻结基线、踩坑记录，换台机器无意义，公开仓库更不应带上。
+.workbuddy/
+.claude/
+.cursor/
+.aider*
+
+# ---- 本机 / 编辑器 ----
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+*.log

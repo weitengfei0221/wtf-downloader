@@ -1,0 +1,197 @@
+/**
+ * wtf-downloader design-tokens.css
+ * ------------------------------------------------------------------
+ * 生成自 design-tokens.json，禁手改，源头在 json。
+ * 任何 Token 值变更：先改 design-tokens.json，再同步本文件。
+ *
+ * 主题策略（Spec §8）：深色优先、跟随系统 prefers-color-scheme。
+ * - 应用启动后由 Tauri 主题监听在 <html> 写入 data-theme="light|dark"
+ *   （显式标记优先级最高，用于系统主题实时切换）；
+ * - 未写入 data-theme 时，由文件末尾的媒体查询兜底跟随系统。
+ * - color-scheme 声明让原生滚动条/表单控件随主题渲染。
+ *
+ * 颜色纪律（v4 黑灰中性 / PrimeVue 风品牌色）：
+ * - primary = 最高对比度中性色（浅色近黑 / 深色近白），非色相；
+ *   每屏 --primary-bg 实心 ≤2 处。
+ * - 语义色（success/warn/danger）仅小面积徽章与文字，禁大面积填充。
+ * - 组件样式一律引用本文件变量，禁止硬编码色值。
+ * ------------------------------------------------------------------
+ */
+
+/* ===================== 浅色主题（:root 默认） ===================== */
+:root {
+  color-scheme: light;
+
+  /* --- Surface 表面层 --- */
+  --bg: #F7F8FA;            /* A1 窗口背景 */
+  --surface: #FFFFFF;       /* A1 列表行/卡片/输入框底 */
+  --surface-2: #EEF0F4;     /* B-slot hover 行/次级面板 */
+  --surface-3: #E7E9EE;     /* B-slot 按下态/菜单底/badge 中性底 */
+
+  /* --- Foreground 前景层 --- */
+  --fg: #16181D;            /* A1 主文本 */
+  --fg-2: #3D434D;          /* B-slot 次级文本 */
+  --muted: #666E7A;         /* A1 副文本/已暂停进度条 */
+  --meta: #9AA2AE;          /* B-slot 三级元数据（仅 ≥12px 短标签） */
+
+  /* --- Border 边框层 --- */
+  --border: #E4E7EC;        /* A1 hairline 边框 */
+  --border-soft: #EEF0F4;   /* B-slot 行内分隔线 */
+
+  /* --- Primary 主操作色（最高对比度中性色，v4） --- */
+  --primary-bg: #111417;    /* A1 主按钮/激活态/下载中进度条 */
+  --primary-fg: #FFFFFF;    /* A2 primary 填充上的文字与图标 */
+  --primary-hover: #33373D; /* A2 */
+  --primary-active: #0B0D0E;/* A2 */
+  --primary-soft: #E9EBEF;  /* C 选中行背景 */
+
+  /* --- Semantic 语义色（仅小面积徽章） --- */
+  --success: #059669;
+  --success-soft: #D1FAE5;
+  --warn: #D97706;
+  --warn-soft: #FEF3C7;
+  --danger: #DC2626;
+  --danger-soft: #FEE2E2;
+
+  /* --- 扩展 --- */
+  --progress-track: #E4E7EC;                 /* C 进度条轨道 */
+  --chart-1: rgba(22, 24, 29, 0.90);         /* C 灰阶阶梯（MVP 不实现） */
+  --chart-2: rgba(22, 24, 29, 0.55);
+  --chart-3: rgba(22, 24, 29, 0.30);
+  --bg-translucent: rgba(247, 248, 250, 0.88); /* C Mica 预留（MVP 不启用） */
+  --overlay: rgba(22, 24, 29, 0.45);         /* C 模态遮罩 */
+
+  /* --- Elevation & Focus --- */
+  --focus-ring: 0 0 0 3px rgba(17, 20, 23, 0.35);
+  --elev-raised: 0 4px 16px rgba(22, 24, 29, 0.10);
+
+  /* --- Font 字体（woff2 子集内嵌，保留系统回退栈） --- */
+  --font-display: "Inter", "Noto Sans SC", "Microsoft YaHei UI", system-ui, sans-serif;
+  --font-body: "Inter", "Noto Sans SC", "Microsoft YaHei UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+
+  /* --- Type Scale 字号（7 级） --- */
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+
+  /* --- Spacing 间距（4px 网格） --- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* --- Radius 圆角 --- */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* --- Motion 动效（150ms 收敛） --- */
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --motion-max: 300ms;
+  --motion-progress: 250ms linear;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ===================== 深色主题（显式标记，最高优先级） ===================== */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0B0D10;
+  --surface: #111419;
+  --surface-2: #191D23;
+  --surface-3: #21252C;
+
+  --fg: #EDF0F4;
+  --fg-2: #B9C0CC;
+  --muted: #8B93A1;
+  --meta: #5F6774;
+
+  --border: #22262E;
+  --border-soft: rgba(255, 255, 255, 0.06);
+
+  --primary-bg: #F5F6F8;
+  --primary-fg: #0B0D10;
+  --primary-hover: #E2E5EA;
+  --primary-active: #FFFFFF;
+  --primary-soft: rgba(237, 240, 244, 0.10);
+
+  --success: #34D399;
+  --success-soft: rgba(52, 211, 153, 0.12);
+  --warn: #FBBF24;
+  --warn-soft: rgba(251, 191, 36, 0.12);
+  --danger: #F87171;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+
+  --progress-track: #1D2128;
+  --chart-1: rgba(237, 240, 244, 0.90);
+  --chart-2: rgba(237, 240, 244, 0.55);
+  --chart-3: rgba(237, 240, 244, 0.30);
+  --bg-translucent: rgba(11, 13, 16, 0.88);
+  --overlay: rgba(0, 0, 0, 0.60);
+
+  --focus-ring: 0 0 0 3px rgba(245, 246, 248, 0.40);
+  --elev-raised: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+/* ============ 深色主题兜底（未写入 data-theme 时跟随系统） ============ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    color-scheme: dark;
+
+    --bg: #0B0D10;
+    --surface: #111419;
+    --surface-2: #191D23;
+    --surface-3: #21252C;
+
+    --fg: #EDF0F4;
+    --fg-2: #B9C0CC;
+    --muted: #8B93A1;
+    --meta: #5F6774;
+
+    --border: #22262E;
+    --border-soft: rgba(255, 255, 255, 0.06);
+
+    --primary-bg: #F5F6F8;
+    --primary-fg: #0B0D10;
+    --primary-hover: #E2E5EA;
+    --primary-active: #FFFFFF;
+    --primary-soft: rgba(237, 240, 244, 0.10);
+
+    --success: #34D399;
+    --success-soft: rgba(52, 211, 153, 0.12);
+    --warn: #FBBF24;
+    --warn-soft: rgba(251, 191, 36, 0.12);
+    --danger: #F87171;
+    --danger-soft: rgba(248, 113, 113, 0.12);
+
+    --progress-track: #1D2128;
+    --chart-1: rgba(237, 240, 244, 0.90);
+    --chart-2: rgba(237, 240, 244, 0.55);
+    --chart-3: rgba(237, 240, 244, 0.30);
+    --bg-translucent: rgba(11, 13, 16, 0.88);
+    --overlay: rgba(0, 0, 0, 0.60);
+
+    --focus-ring: 0 0 0 3px rgba(245, 246, 248, 0.40);
+    --elev-raised: 0 8px 32px rgba(0, 0, 0, 0.45);
+  }
+}
+
+/* ============ 动效无障碍：reduced-motion 全部退化为瞬切 ============ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

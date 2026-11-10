@@ -1,0 +1,116 @@
+/**
+ * 全局基础样式：重置 + 主题应用 + 图标三档尺寸 + mono 数字工具类。
+ * 颜色一律 var(--token)（design-tokens.css），本文件禁出现色值字面量。
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* 键盘焦点环（DESIGN.md §1.7：error 环即焦点环，避免双环） */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  /* 兜底：任务行 / 列表容器禁选文本后，输入控件仍可正常选中文字
+     （限速输入、搜索框、弹窗输入框；DESIGN.md §2.3 / §2.9） */
+  user-select: text;
+}
+
+input:focus-visible,
+textarea:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+/* 实时刷新数字：mono + tabular-nums，防 4Hz 跳动（DESIGN.md §1.3） */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Lucide 图标三档（禁随意内联尺寸，DESIGN.md §9.5） */
+.icon-16 {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.icon-20 {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+.icon-24 {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+
+/* 状态指示器旋转（shimmer/Loader2/indeterminate 为 DESIGN 允许的持续加载指示器） */
+.icon-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 滚动条随主题（color-scheme 已由 tokens 的 color-scheme 声明驱动） */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
