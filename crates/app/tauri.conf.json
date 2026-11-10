@@ -46,7 +46,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDJGQ0JGOTM3RURCQjlGODQKUldTRW43dnROL25MTDlIbWRIdFRHdkg0NGZxWVpmRjJLWEV6dU9qZTZVUzRXSXVKWU9TZnMzSVUK",
       "endpoints": [
-        "https://github.com/OWNER/REPO/releases/latest/download/latest.json"
+        "https://github.com/weitengfei0221/wtf-downloader/releases/latest/download/latest.json"
       ]
     }
   }

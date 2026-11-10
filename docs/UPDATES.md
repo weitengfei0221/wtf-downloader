@@ -111,8 +111,8 @@ Get-Content target\release\bundle\nsis\wtf-downloader_0.1.1_x64-setup.exe.sig -R
 
 | 项 | 当前状态 | 处理 |
 |----|----------|------|
-| GitHub 仓库地址 | `tauri.conf.json` 的 `endpoints` 为占位地址，全仓库仅此一处 | 用户建仓后按 §9.2–9.3 提供 `OWNER/REPO` 并一行替换，然后重新构建 |
-| 本地 git 仓库 | 尚未初始化（由用户执行） | 按 §9.1；`.gitignore` 已就绪 |
+| GitHub 仓库地址 | **已替换**为 `https://github.com/weitengfei0221/wtf-downloader/releases/latest/download/latest.json` | 端点编译进 exe，替换后**必须重新打包**；已安装旧版客户端的端点无法远程修改 |
+| 本地 git 仓库 | **已初始化**，`main` 已推送到 origin | 见 §9.1；`.gitignore` / `.gitattributes` 已就绪 |
 | Release tag 与附件命名 | 模板用 `v0.1.1` | 与实际 Release 保持一致 |
 | 私钥离线备份 | 尚未确认已完成 | 由用户执行，见 §2 |
 | 品牌图标 | **已配置**：`wtf-downloader-*` 四件套 + 六层 ICO，安装程序简体中文 | 见 §8.1；欢迎页侧栏大图仍需 BMP，未配置 |
