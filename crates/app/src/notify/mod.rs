@@ -39,13 +39,21 @@ mod windows;
 #[cfg(test)]
 mod tests;
 
-use tauri::AppHandle;
+use std::path::{Path, PathBuf};
+use tauri::path::BaseDirectory;
+use tauri::{AppHandle, Manager};
 
 /// Must match `identifier` in tauri.conf.json; a unit test enforces that.
 pub const APP_USER_MODEL_ID: &str = "com.wtfdownloader.app";
 
 /// Name the shell prints on the toast banner.
 pub const DISPLAY_NAME: &str = "wtf-downloader";
+
+/// Banner logo, shipped as a bundle resource (see `bundle.resources` in
+/// tauri.conf.json). A real image file is required: pointing `IconUri` at the
+/// `.exe` - the previous behaviour - leaves the slot empty because the shell
+/// does not extract icons out of executables for the toast layout.
+pub const TOAST_ICON_RESOURCE: &str = "icons/notify.png";
 
 /// Upper bounds for the toast fields, enforced by the command layer.
 pub const TITLE_MAX_CHARS: usize = 128;
@@ -69,13 +77,40 @@ pub fn icon_uri(exe: &std::path::Path) -> String {
     format!("file:///{}", encoded.trim_start_matches('/'))
 }
 
+/// Resolve the banner logo that ships with the bundle.
+///
+/// Returns `None` when the resource is missing (plain `cargo test`, or a
+/// portable run that never installed the resources): callers must then fall
+/// back instead of pointing a toast at a path that does not exist.
+pub fn toast_icon(app: &AppHandle) -> Option<PathBuf> {
+    let path = app
+        .path()
+        .resolve(TOAST_ICON_RESOURCE, BaseDirectory::Resource)
+        .ok()?;
+    is_usable_icon(&path).then_some(path)
+}
+
+/// The path is written verbatim into the toast XML, with no escaping by the
+/// library, so an XML metacharacter would make the shell reject the whole
+/// notification. A user profile literally named `a&b` must degrade to "no
+/// icon", not "no notification".
+fn is_usable_icon(path: &Path) -> bool {
+    if !path.is_file() {
+        return false;
+    }
+    !path
+        .to_string_lossy()
+        .chars()
+        .any(|c| matches!(c, '&' | '<' | '>' | '"' | '\''))
+}
+
 /// Install this app's notification identity. Called once, first thing in the
 /// Tauri `setup` hook, before any toast can be shown.
 ///
 /// Never fails the caller: a notification that renders with a generic name is
 /// strictly better than an app that refuses to start, so every error is
 /// logged and swallowed.
-pub fn prepare() {
+pub fn prepare(app: &AppHandle) {
     #[cfg(windows)]
     {
         match windows::set_process_identity(APP_USER_MODEL_ID) {
@@ -87,12 +122,15 @@ pub fn prepare() {
             Err(err) => eprintln!("[wtf-downloader] notification identity not set: {err}"),
         }
 
-        let exe = std::env::current_exe().ok();
-        let icon = exe.as_deref().map(icon_uri);
+        // Prefer the bundled logo; the exe only as a last resort, because the
+        // shell cannot render an executable in an image slot.
+        let icon_path = toast_icon(app).or_else(|| std::env::current_exe().ok());
+        let icon = icon_path.as_deref().map(icon_uri);
         match windows::register_aumid(&registry_subkey(), DISPLAY_NAME, icon.as_deref()) {
             Ok(()) => println!(
-                "[wtf-downloader] AUMID registered: {} ({DISPLAY_NAME})",
-                registry_subkey()
+                "[wtf-downloader] AUMID registered: {} ({DISPLAY_NAME}) icon={}",
+                registry_subkey(),
+                icon.as_deref().unwrap_or("<none>")
             ),
             Err(err) => eprintln!(
                 "[wtf-downloader] AUMID registration failed ({}): {err}",
@@ -100,12 +138,18 @@ pub fn prepare() {
             ),
         }
     }
+
+    #[cfg(not(windows))]
+    {
+        let _ = app;
+    }
 }
 
 /// Show a toast that carries this app's identity.
 #[cfg(windows)]
-pub fn show(_app: &AppHandle, title: &str, body: &str) -> Result<(), String> {
-    windows::show_toast(APP_USER_MODEL_ID, title, body)
+pub fn show(app: &AppHandle, title: &str, body: &str) -> Result<(), String> {
+    let icon = toast_icon(app);
+    windows::show_toast(APP_USER_MODEL_ID, title, body, icon.as_deref())
 }
 
 /// Non-Windows platforms have no AUMID concept; the plugin path is already

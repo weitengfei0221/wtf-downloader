@@ -137,7 +137,7 @@ describe('单条失败不中断 + 部分失败可见', () => {
 });
 
 describe('批量删除：deleteFiles 逐条原样传递 + 返回 succeeded 供清理勾选', () => {
-  it('withFiles=true 时每条都传 true（含已完成任务，AC-13 由后端兜底）', async () => {
+  it('withFiles=true 时每条都传 true（含已完成任务，成品文件由后端删）', async () => {
     const rows = [task('a', 'downloading'), task('b', 'completed')];
     const result = await useBulkActions().remove(rows, true);
 
@@ -149,8 +149,8 @@ describe('批量删除：deleteFiles 逐条原样传递 + 返回 succeeded 供�
     expect(mocks.listTasks).toHaveBeenCalledTimes(1);
   });
 
-  it('withFiles=false 时每条都传 false', async () => {
-    await useBulkActions().remove([task('a', 'failed')], false);
+  it('withFiles=false 时每条都传 false（文件保留）', async () => {
+    await useBulkActions().remove([task('a', 'completed')], false);
     expect(mocks.removeTask).toHaveBeenCalledExactlyOnceWith('a', false);
   });
 

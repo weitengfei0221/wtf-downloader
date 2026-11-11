@@ -5,7 +5,7 @@ import { bulkTargetIds, deleteFilesFromKey } from './bulk';
 /**
  * 行为验证：批量状态判据与删除语义都收敛在 `utils/bulk.ts` 一处。
  * 组件（TaskContextMenu 的 can.*）与编排（useBulkActions.run）共用这两个函数，
- * 这里守住「按状态决定可用性」与「三按钮 key → deleteFiles」不出现第二份实现。
+ * 这里守住「按状态决定可用性」与「按钮 key → deleteFiles」不出现第二份实现。
  */
 const task = (id: string, status: TaskStatus): TaskRecord => ({
   id,
@@ -56,17 +56,18 @@ describe('bulkTargetIds：动作 → 状态判据（唯一实现）', () => {
   });
 });
 
-describe('deleteFilesFromKey：三按钮 key → deleteFiles（唯一实现）', () => {
-  it('with-files → true（同时删除文件）', () => {
+describe('deleteFilesFromKey：按钮 key → deleteFiles（唯一实现，默认不删）', () => {
+  it('with-files → true（删除任务和文件）', () => {
     expect(deleteFilesFromKey('with-files')).toBe(true);
   });
 
-  it('task-only → false（仅删任务）', () => {
+  it('task-only → false（仅删除任务，文件保留）', () => {
     expect(deleteFilesFromKey('task-only')).toBe(false);
   });
 
-  it('cancel / 未知 key / 空串 → false（绝不误删文件）', () => {
+  it('cancel / 未完成任务的单按钮 remove / 未知 key / 空串 → false（绝不误删文件）', () => {
     expect(deleteFilesFromKey('cancel')).toBe(false);
+    expect(deleteFilesFromKey('remove')).toBe(false);
     expect(deleteFilesFromKey('with_files')).toBe(false);
     expect(deleteFilesFromKey('')).toBe(false);
   });

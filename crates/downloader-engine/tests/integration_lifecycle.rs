@@ -51,7 +51,9 @@ async fn wait_for_status(
     }
 }
 
-/// Removing a task with delete_files removes the .part (AC-13).
+/// AC-13 part 1: an unfinished task's `.part` is cleared on removal
+/// **regardless** of `delete_files` - once the row is gone the partial file
+/// can never be resumed, so keeping it only leaks disk space.
 #[tokio::test]
 async fn remove_task_deletes_part_file() {
     let data = pseudo_data(3 * MIN_SEGMENT_BYTES as usize);
@@ -83,8 +85,91 @@ async fn remove_task_deletes_part_file() {
     }
     let part = dir.join("file.bin.part");
     assert!(part.exists());
+    // `false` on purpose: the .part is not a "file the user chose to keep".
+    engine.remove(&id, false).await.unwrap();
+    assert!(!part.exists(), "an unfinished task's .part must be cleared either way");
+    let tasks = engine.list(TaskFilter::All).await.unwrap();
+    assert!(tasks.iter().all(|t| t.id != id));
+}
+
+/// AC-13 part 2: "仅删除任务" (`delete_files = false`) drops the row and keeps
+/// the finished file on disk.
+#[tokio::test]
+async fn remove_completed_task_keeps_finished_file() {
+    let data = pseudo_data(3 * MIN_SEGMENT_BYTES as usize);
+    let server = TestServer::start_with(data.clone(), 2, false, None);
+    let (engine, dir) = make_engine("remove_completed").await;
+
+    let id = engine
+        .add_task(NewTask {
+            url: server.url.clone(),
+            filename: None,
+            dir: Some(dir.clone()),
+            headers: vec![],
+            segments: Some(3),
+        })
+        .await
+        .unwrap();
+    wait_for_status(&engine, &id, TaskStatus::Completed, Duration::from_secs(60)).await;
+
+    let finished = dir.join("file.bin");
+    assert!(finished.exists(), "completed download must leave the file on disk");
+    engine.remove(&id, false).await.unwrap();
+    assert!(finished.exists(), "delete_files=false must keep the finished file");
+    let tasks = engine.list(TaskFilter::All).await.unwrap();
+    assert!(tasks.iter().all(|t| t.id != id), "the row itself must be gone");
+}
+
+/// AC-13 part 3: "删除任务和文件" (`delete_files = true`) really deletes the
+/// finished file - that is the whole point of the option.
+#[tokio::test]
+async fn remove_completed_task_with_files_deletes_finished_file() {
+    let data = pseudo_data(3 * MIN_SEGMENT_BYTES as usize);
+    let server = TestServer::start_with(data.clone(), 2, false, None);
+    let (engine, dir) = make_engine("remove_with_files").await;
+
+    let id = engine
+        .add_task(NewTask {
+            url: server.url.clone(),
+            filename: None,
+            dir: Some(dir.clone()),
+            headers: vec![],
+            segments: Some(3),
+        })
+        .await
+        .unwrap();
+    wait_for_status(&engine, &id, TaskStatus::Completed, Duration::from_secs(60)).await;
+
+    let finished = dir.join("file.bin");
+    assert!(finished.exists());
     engine.remove(&id, true).await.unwrap();
-    assert!(!part.exists(), "delete_files must remove the .part");
+    assert!(!finished.exists(), "delete_files=true must delete the finished file");
+    let tasks = engine.list(TaskFilter::All).await.unwrap();
+    assert!(tasks.iter().all(|t| t.id != id), "the row itself must be gone");
+}
+
+/// Missing file + `delete_files = true` is not an error: the goal ("no file on
+/// disk") already holds, e.g. the user deleted it in Explorer first.
+#[tokio::test]
+async fn remove_completed_task_with_files_tolerates_missing_file() {
+    let data = pseudo_data(3 * MIN_SEGMENT_BYTES as usize);
+    let server = TestServer::start_with(data.clone(), 2, false, None);
+    let (engine, dir) = make_engine("remove_missing_file").await;
+
+    let id = engine
+        .add_task(NewTask {
+            url: server.url.clone(),
+            filename: None,
+            dir: Some(dir.clone()),
+            headers: vec![],
+            segments: Some(3),
+        })
+        .await
+        .unwrap();
+    wait_for_status(&engine, &id, TaskStatus::Completed, Duration::from_secs(60)).await;
+
+    std::fs::remove_file(dir.join("file.bin")).unwrap();
+    engine.remove(&id, true).await.expect("NotFound must not fail the removal");
     let tasks = engine.list(TaskFilter::All).await.unwrap();
     assert!(tasks.iter().all(|t| t.id != id));
 }

@@ -4,7 +4,8 @@
 
 use std::ffi::OsStr;
 use std::os::windows::ffi::OsStrExt;
-use tauri_winrt_notification::Toast;
+use std::path::Path;
+use tauri_winrt_notification::{IconCrop, Toast};
 use windows_sys::Win32::UI::Shell::{
     GetCurrentProcessExplicitAppUserModelID, SetCurrentProcessExplicitAppUserModelID,
 };
@@ -75,10 +76,22 @@ pub(super) fn register_aumid(
 }
 
 /// Show a toast that carries `aumid`, so the shell attributes it to this app.
-pub(super) fn show_toast(aumid: &str, title: &str, body: &str) -> Result<(), String> {
-    Toast::new(aumid)
-        .title(title)
-        .text1(body)
-        .show()
-        .map_err(|e| format!("toast show: {e}"))
+///
+/// `icon` becomes the `<image placement="appLogoOverride">` slot, i.e. the
+/// square logo on the left of the banner. It must be an absolute image file:
+/// the library writes the path verbatim into the toast XML, so callers pass
+/// the validated path from `super::toast_icon` and never an `.exe` (the shell
+/// does not extract icons out of executables for this slot).
+pub(super) fn show_toast(
+    aumid: &str,
+    title: &str,
+    body: &str,
+    icon: Option<&Path>,
+) -> Result<(), String> {
+    let mut toast = Toast::new(aumid).title(title).text1(body);
+    if let Some(path) = icon {
+        // Square keeps the artwork's own rounded card; Circular would mask it.
+        toast = toast.icon(path, IconCrop::Square, "");
+    }
+    toast.show().map_err(|e| format!("toast show: {e}"))
 }

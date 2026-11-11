@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import {
-  clearStats,
   getConfig,
   setAutostart,
   setConfig,
@@ -91,16 +90,6 @@ export const useConfigStore = defineStore('config', {
       } catch (e) {
         toast.pushError('toast.saveFailed', e);
         return false;
-      }
-    },
-
-    async clearStats(): Promise<void> {
-      const toast = useToastStore();
-      try {
-        await clearStats();
-        toast.push('success', 'toast.clearedStats');
-      } catch (e) {
-        toast.pushError('toast.saveFailed', e);
       }
     },
   },

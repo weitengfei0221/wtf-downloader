@@ -15,8 +15,20 @@ use crate::protocol::{
 };
 use crate::store::{SegmentRow, TaskRow};
 use async_trait::async_trait;
+use std::path::Path;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+
+/// Delete a file the engine owns (a Completed task's finished download).
+/// `NotFound` counts as success: the caller's goal is "no file on disk", and
+/// re-raising it would turn a satisfied intent into a scary error.
+fn remove_owned_file(path: &Path) -> Result<(), EngineError> {
+    match std::fs::remove_file(path) {
+        Ok(()) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(EngineError::Io(format!("{}: {e}", path.display()))),
+    }
+}
 
 pub(crate) fn now_ms() -> i64 {
     std::time::SystemTime::now()
@@ -181,6 +193,16 @@ impl crate::protocol::Downloader for HttpDownloader {
             let row = handle.row.lock().unwrap();
             (row.dir.clone(), row.filename.clone(), handle.core.lock().unwrap().status)
         };
+
+        // "Delete task AND files" on a finished download: drop the finished
+        // file BEFORE the row, and propagate real failures. The option exists
+        // to make the bytes disappear - if the file is locked we must say so
+        // instead of silently returning a half-done removal.
+        // `NotFound` counts as success: the goal (no file on disk) already holds.
+        if delete_files && status == TaskStatus::Completed {
+            remove_owned_file(&dir.join(&filename))?;
+        }
+
         self.tasks.lock().unwrap().remove(id);
         self.throttle.clear_task(id);
         {
@@ -190,10 +212,13 @@ impl crate::protocol::Downloader for HttpDownloader {
                 .await
                 .map_err(|e| EngineError::Engine(e.to_string()))??;
         }
-        // AC-13: never touch files of completed tasks; only .part cleanup.
-        if delete_files && status != TaskStatus::Completed {
-            let part = part_path(&dir, &filename);
-            let _ = std::fs::remove_file(part);
+
+        // Unfinished download: the `.part` goes away no matter which button
+        // was pressed - once the row is gone it can never be resumed, so
+        // keeping it would only leak disk space. Best-effort (a paused task
+        // may still be flushing) and never a reason to fail the removal.
+        if status != TaskStatus::Completed {
+            let _ = std::fs::remove_file(part_path(&dir, &filename));
         }
         self.lifecycle.emit(EngineEvent::TaskRemoved { task_id: id.clone() });
         Ok(())

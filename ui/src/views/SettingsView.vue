@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { FolderOpen, RotateCw, Trash2 } from '@lucide/vue';
+import { FolderOpen, RotateCw } from '@lucide/vue';
 import { t } from '@/locales/zh-CN';
 import { pickDirectory } from '@/api/config';
 import { MB } from '@/utils/units';
@@ -14,23 +14,25 @@ import ToggleSwitch from '@/components/ToggleSwitch.vue';
 import BaseInput from '@/components/BaseInput.vue';
 import BaseButton from '@/components/BaseButton.vue';
 import IconButton from '@/components/IconButton.vue';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
 /**
- * 设置页（DESIGN.md §4）：三分组 7 设置项，即时保存。
+ * 设置页（DESIGN.md §4）：即时保存。
  * 内容列 max-width 720px + margin-inline auto 居中（左右对称留白，问题 4a）。
  * 顶栏右上角此时是「返回任务列表」（ArrowLeft 20），不再是齿轮（问题 4b）。
  *
  * 2026-11 交互减法：下载目录行去掉「打开」按钮 —— opener 受 ACL 路径作用域限制
  * 无法授权，点击必然 `Not allowed to open path`。目录行只保留 FolderOpen 图标
  * （pickDirectory 系统选择器，正常工作）+ 路径展示。
+ *
+ * 2026-11 再次减法：整组「数据 / 清除统计数据」删除。该按钮只把 GlobalStats 的
+ * 两个原子值置零，而 4Hz 聚合器下一帧就把实时值写回，用户点完看不到任何变化 ——
+ * 一个不留痕迹的按钮比没有按钮更糟。应用不上传任何数据，因此也不需要那条免责声明。
  */
 const router = useRouter();
 const configStore = useConfigStore();
 
 const segmentsText = ref('');
 const limitText = ref('');
-const clearConfirm = ref(false);
 
 const config = computed(() => configStore.config);
 
@@ -170,18 +172,6 @@ async function commitLimit(): Promise<void> {
           </section>
 
           <section class="group">
-            <h3 class="group-title">{{ t('settings.groupData') }}</h3>
-            <div class="group-box">
-              <SettingsRow :label="t('settings.statsDesc')">
-                <BaseButton variant="destructive" @click="clearConfirm = true">
-                  <template #icon><Trash2 class="icon-16" /></template>
-                  {{ t('settings.clearStats') }}
-                </BaseButton>
-              </SettingsRow>
-            </div>
-          </section>
-
-          <section class="group">
             <h3 class="group-title">{{ t('settings.groupUpdate') }}</h3>
             <div class="group-box">
               <UpdateSettingsRow />
@@ -194,22 +184,6 @@ async function commitLimit(): Promise<void> {
     </main>
 
     <StatusBar />
-
-    <ConfirmDialog
-      v-if="clearConfirm"
-      :title="t('settings.clearStatsTitle')"
-      :message="t('settings.clearStatsMessage')"
-      :actions="[
-        { key: 'cancel', label: t('common.cancel'), variant: 'ghost', safe: true },
-        { key: 'clear', label: t('settings.clear'), variant: 'destructive' },
-      ]"
-      @select="
-        (key) => {
-          clearConfirm = false;
-          if (key === 'clear') void configStore.clearStats();
-        }
-      "
-    />
   </div>
 </template>
 

@@ -51,7 +51,11 @@ export function useBulkActions() {
     return { succeeded, failed, total: ids.length };
   }
 
-  /** 批量删除：`deleteFiles` 逐条原样传递；AC-13 由后端保证（已完成任务文件永不删） */
+  /**
+   * 批量删除：`deleteFiles` 逐条原样传递。
+   * 语义单点在后端（AC-13）：`.part` 一律清；已完成任务的成品文件只在
+   * `deleteFiles=true` 时删。
+   */
   async function remove(selected: TaskRecord[], deleteFiles: boolean): Promise<BulkResult> {
     const succeeded: string[] = [];
     let failed = 0;

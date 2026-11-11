@@ -172,11 +172,9 @@ impl GlobalStats {
         self.total_speed_bps.store(total_speed_bps, Ordering::Relaxed);
     }
 
-    /// Reset the cached values (clear_stats command; the 4Hz aggregator
-    /// repopulates live tasks on its next tick).
-    pub fn clear(&self) {
-        self.store(0, 0);
-    }
+    // No `clear()`: the values are rewritten by the 4Hz aggregator, so zeroing
+    // them is invisible to the user. The `clear_stats` command that used it was
+    // removed on 2026-11-10 along with its settings-page row.
 
     pub fn snapshot(&self) -> (u64, u64) {
         use std::sync::atomic::Ordering;
@@ -282,6 +280,14 @@ pub trait Downloader: Send + Sync + 'static {
     async fn pause(&self, id: &TaskId) -> Result<TaskSnapshot, EngineError>;
     async fn resume(&self, id: &TaskId) -> Result<TaskSnapshot, EngineError>;
     async fn retry(&self, id: &TaskId) -> Result<TaskSnapshot, EngineError>;
+    /// Delete the task row, plus its files when asked.
+    ///
+    /// Two independent rules (AC-13):
+    ///   * `.part` of an **unfinished** task is always removed - once the row
+    ///     is gone it can never be resumed, so keeping it only leaks space.
+    ///   * the **finished** file of a Completed task is removed **only** when
+    ///     `delete_files` is true ("删除任务和文件"); otherwise it stays and
+    ///     the row is dropped alone ("仅删除任务").
     async fn remove(&self, id: &TaskId, delete_files: bool) -> Result<(), EngineError>;
     async fn pause_all(&self) -> Result<(), EngineError>;
     async fn resume_all(&self) -> Result<(), EngineError>;

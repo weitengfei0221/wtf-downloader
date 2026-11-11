@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="WTF Bento icon">
+  <title>翠绿 · wtf-downloader</title>
+  <desc>wtf-downloader：透明画布 + 满铺圆角底板，W / T / F 三格固定；右下插槽为 d，配色 翠绿。</desc>
+  <polygon points="156,0 868,0 868,1024 156,1024" fill="#128A63"/>
+  <polygon points="0,156 1024,156 1024,868 0,868" fill="#128A63"/>
+  <circle cx="156" cy="156" r="156" fill="#128A63"/>
+  <circle cx="868" cy="156" r="156" fill="#128A63"/>
+  <circle cx="156" cy="868" r="156" fill="#128A63"/>
+  <circle cx="868" cy="868" r="156" fill="#128A63"/>
+  <polyline points="102,512 922,512" fill="none" stroke="#EDF8F2" stroke-width="16" stroke-linecap="butt" stroke-linejoin="round"/>
+  <polyline points="512,102 512,922" fill="none" stroke="#EDF8F2" stroke-width="16" stroke-linecap="butt" stroke-linejoin="round"/>
+  <polygon points="141.768,193.896 213.768,417.896 244.232,408.104 172.232,184.104" fill="#EDF8F2"/>
+  <polygon points="244.068,418.381 316.068,216.781 285.932,206.019 213.932,407.619" fill="#EDF8F2"/>
+  <polygon points="285.932,216.781 357.932,418.381 388.068,407.619 316.068,206.019" fill="#EDF8F2"/>
+  <polygon points="388.232,417.896 460.232,193.896 429.768,184.104 357.768,408.104" fill="#EDF8F2"/>
+  <polygon points="213.932,407.619 244.232,408.104 244.068,418.381 213.768,417.896" fill="#EDF8F2"/>
+  <polygon points="285.932,206.019 316.068,206.019 316.068,216.781 285.932,216.781" fill="#EDF8F2"/>
+  <polygon points="357.768,408.104 388.068,407.619 388.232,417.896 357.932,418.381" fill="#EDF8F2"/>
+  <polygon points="605,189 781,189 781,221 605,221" fill="#EDF8F2"/>
+  <polygon points="677,189 709,189 709,413 677,413" fill="#EDF8F2"/>
+  <polygon points="208,611 240,611 240,835 208,835" fill="#EDF8F2"/>
+  <polygon points="208,611 348.8,611 348.8,643 208,643" fill="#EDF8F2"/>
+  <polygon points="208,711.8 317.12,711.8 317.12,743.8 208,743.8" fill="#EDF8F2"/>
+  <polygon points="610,598 836,598 836,896 610,896" fill="#F2B23C"/>
+  <polygon points="550,658 896,658 896,836 550,836" fill="#F2B23C"/>
+  <circle cx="610" cy="658" r="60" fill="#F2B23C"/>
+  <circle cx="836" cy="658" r="60" fill="#F2B23C"/>
+  <circle cx="610" cy="836" r="60" fill="#F2B23C"/>
+  <circle cx="836" cy="836" r="60" fill="#F2B23C"/>
+  <polygon points="635,635 752.76,635 811,693.24 811,800.76 752.76,859 635,859" fill="#0B4A38"/>
+  <polygon points="667,667 752.76,667 779,693.24 779,800.76 752.76,827 667,827" fill="#F2B23C"/>
+</svg>

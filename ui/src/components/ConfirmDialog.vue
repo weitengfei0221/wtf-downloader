@@ -2,18 +2,13 @@
 import { computed, onBeforeUnmount, onMounted } from 'vue';
 import ModalShell from '@/components/ModalShell.vue';
 import BaseButton from '@/components/BaseButton.vue';
+import type { ConfirmAction } from '@/utils/dialog';
 
 /**
  * 通用确认弹窗（DESIGN.md §1.7）：宽 400px；Esc = 取消，Enter = 最安全项
  * （safe = true 的按钮）；焦点困环由 ModalShell 提供。
+ * 按钮项类型定义在 `utils/dialog.ts`，调用方派生 actions 时不复制一份。
  */
-interface ConfirmAction {
-  key: string;
-  label: string;
-  variant?: 'primary' | 'secondary' | 'ghost' | 'destructive';
-  /** Enter 触发项（最安全项：取消/仅删除任务） */
-  safe?: boolean;
-}
 
 const props = defineProps<{
   title: string;

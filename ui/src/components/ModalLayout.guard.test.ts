@@ -45,6 +45,14 @@ describe('ModalShell：三段式 flex，唯一滚动容器是 .body', () => {
     expect(shell.match(/overflow-y:\s*auto/g)).toHaveLength(1);
   });
 
+  it('滚动容器给焦点环留出画环余量（否则外环左右两侧被裁）', () => {
+    const body = blockOf(shell, '.body');
+    // --focus-ring 是 3px 外环：容器水平零余量时左右两段会被 overflow 裁掉，
+    // 只剩上下两段，表现为「输入框聚焦后左右没有边框」（2026-11 用户实测）。
+    expect(body).toContain('padding: var(--space-1)');
+    expect(body).toMatch(/margin:\s*calc\(var\(--space-1\)\s*\*\s*-1\)/);
+  });
+
   it('可选具名 footer 插槽固定底部，且只在有内容时渲染', () => {
     expect(blockOf(shell, '.foot')).toContain('flex: none');
     expect(shell).toContain('v-if="$slots.footer" class="foot"');

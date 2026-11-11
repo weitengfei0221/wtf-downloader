@@ -166,21 +166,29 @@ describe('可用性判据与删除语义：唯一实现，不在组件里重写�
     expect(contextCode).not.toMatch(/status === '(paused|downloading|failed)'/);
   });
 
-  it('删除用 deleteFilesFromKey 单点映射，不在组件里自写 with-files 判断', () => {
+  it('删除用 deleteFilesFromKey 单点映射，组件里不自写 with-files 判断', () => {
     expect(contextMenu).toContain('deleteFilesFromKey(key)');
     expect(contextCode).not.toContain("key === 'with-files'");
-    expect(view).toContain('await tasksStore.remove(task.id, deleteFilesFromKey(key))');
+    expect(view).toContain('deleteFilesFromKey(key)');
     expect(viewCode).not.toContain("key === 'with-files'");
     expect(bulk).toContain('export function deleteFilesFromKey(key: string): boolean');
   });
 
-  it('三按钮确认 + AC-13 文案 + 删除成功后 removeIds(result.succeeded) 清理选择', () => {
+  it('确认框按状态派生：已完成三按钮（含「删除任务和文件」），未完成只有「删除」', () => {
     for (const key of ['cancel', 'task-only', 'with-files']) {
       expect(contextMenu).toContain(`key: '${key}'`);
     }
+    // 未完成任务删完记录就没了，磁盘上只剩 .part（后端一律清），没有可选的文件
+    expect(view).toContain("confirmTask.value?.status !== 'completed'");
+    expect(view).toContain("{ key: 'remove', label: t('remove.confirm')");
+    expect(view).toContain("{ key: 'with-files', label: t('remove.withFiles')");
+    expect(view).toContain('remove.messageCompleted');
+  });
+
+  it('批量删除文案告知「只有选删除任务和文件才删文件」+ 删除成功后清理选择', () => {
     expect(contextMenu).toContain('hasCompleted.value');
     expect(contextMenu).toContain("t('bulk.removeMessageCompleted'");
-    expect(locales).toContain('已完成任务的正式文件不会被删除');
+    expect(locales).toContain('选「删除任务和文件」才会删除已完成任务的文件');
     expect(contextMenu).toContain("emit('removed', result.succeeded)");
     expect(view).toContain('@removed="removeIds"');
     expect(selection).toContain('function removeIds(ids: string[]): void');

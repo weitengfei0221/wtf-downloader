@@ -101,6 +101,12 @@ onBeforeUnmount(() => {
   flex: 1;
   min-height: 0; /* 允许在 max-height 触顶时收缩，否则 overflow 不生效 */
   overflow-y: auto; /* 唯一滚动容器 */
+  /* 焦点环是 3px **外环**（--focus-ring）。滚动容器水平方向零余量时，这个外环
+     以及输入框自身的 1px 边框会一起被裁掉，只剩上下两段（2026-11 用户实测：
+     「获得焦点时左右边框没有」）。这里留一圈画环余量，再用等量负 margin 抵消，
+     内容位置与宽高完全不变，只为让外环有地方画。 */
+  padding: var(--space-1);
+  margin: calc(var(--space-1) * -1);
 }
 
 .foot {

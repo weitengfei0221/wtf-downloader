@@ -8,6 +8,7 @@ import { openFile } from '@/api/config';
 import { isResumeConflict } from '@/api/invoke';
 import { joinPath } from '@/utils/path';
 import { deleteFilesFromKey } from '@/utils/bulk';
+import type { ConfirmAction } from '@/utils/dialog';
 import type { TaskRecord } from '@/api/types';
 import { useTasksStore } from '@/stores/tasks';
 import { useConfigStore } from '@/stores/config';
@@ -194,16 +195,55 @@ async function runTaskById(id: string, fn: () => Promise<unknown>): Promise<void
   }
 }
 
-/** 删除流程（DESIGN.md §2.5）：未完成 → 三按钮确认；已完成 → 直接移除 + 5s 撤销 */
+/**
+ * 删除流程（DESIGN.md §2.5）。两条路径语义不同，确认框按状态派生：
+ * - 未完成：`.part` 无论按哪个键都由后端清除，所以只给「取消 / 删除」，
+ *   多出来的「是否删文件」是假选项。
+ * - 已完成：磁盘上有成品文件，必须让用户选「仅删除任务」还是「删除任务和文件」。
+ */
 function requestRemove(task: TaskRecord): void {
-  if (task.status === 'completed') void removeCompleted(task);
-  else confirmTask.value = task;
+  confirmTask.value = task;
 }
 
-async function removeCompleted(task: TaskRecord): Promise<void> {
+const removeActions = computed<ConfirmAction[]>(() => {
+  const cancel: ConfirmAction = {
+    key: 'cancel',
+    label: t('common.cancel'),
+    variant: 'ghost',
+    safe: true,
+  };
+  if (confirmTask.value?.status !== 'completed') {
+    return [cancel, { key: 'remove', label: t('remove.confirm'), variant: 'destructive' }];
+  }
+  return [
+    cancel,
+    { key: 'task-only', label: t('remove.onlyTask'), variant: 'secondary', safe: true },
+    { key: 'with-files', label: t('remove.withFiles'), variant: 'destructive' },
+  ];
+});
+
+const removeMessage = computed(() => {
+  const name = confirmTask.value?.filename ?? '';
+  return t(
+    confirmTask.value?.status === 'completed' ? 'remove.messageCompleted' : 'remove.message',
+    { filename: name },
+  );
+});
+
+/**
+ * 已完成任务移除：`deleteFiles=false` 保留成品文件、给 5s 撤销；
+ * `deleteFiles=true` 文件已删，撤销无从恢复，故不给撤销入口。
+ */
+async function removeCompleted(task: TaskRecord, deleteFiles: boolean): Promise<void> {
   const payload = { url: task.url, filename: task.filename, dir: task.dir };
   try {
-    await tasksStore.remove(task.id, false);
+    await tasksStore.remove(task.id, deleteFiles);
+    if (deleteFiles) {
+      toast.push('info', 'remove.removedWithFileToast', {
+        params: { filename: task.filename },
+      });
+      return;
+    }
     toast.push('info', 'remove.removedToast', {
       params: { filename: task.filename },
       actionLabel: 'common.undo',
@@ -230,9 +270,13 @@ async function confirmRemove(key: string): Promise<void> {
   const task = confirmTask.value;
   confirmTask.value = null;
   if (!task || key === 'cancel') return;
+  if (task.status === 'completed') {
+    await removeCompleted(task, deleteFilesFromKey(key));
+    return;
+  }
   try {
-    // 与批量删除共用 deleteFilesFromKey：三按钮 key → deleteFiles 语义只有一处实现
-    await tasksStore.remove(task.id, deleteFilesFromKey(key));
+    // 未完成任务：`.part` 由后端一律清除（AC-13），与按哪个键无关
+    await tasksStore.remove(task.id, false);
   } catch (e) {
     toast.pushError('toast.saveFailed', e);
   }
@@ -314,12 +358,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onCtrlF));
     <ConfirmDialog
       v-if="confirmTask"
       :title="t('remove.title')"
-      :message="t('remove.message', { filename: confirmTask.filename })"
-      :actions="[
-        { key: 'cancel', label: t('common.cancel'), variant: 'ghost', safe: true },
-        { key: 'task-only', label: t('remove.onlyTask'), variant: 'secondary', safe: true },
-        { key: 'with-files', label: t('remove.withFiles'), variant: 'destructive' },
-      ]"
+      :message="removeMessage"
+      :actions="removeActions"
       @select="confirmRemove"
     />
   </div>

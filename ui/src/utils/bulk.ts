@@ -21,10 +21,12 @@ export function bulkTargetIds(kind: BulkActionKey, tasks: TaskRecord[]): string[
 }
 
 /**
- * 删除确认三按钮 → `deleteFiles` 语义（**唯一实现**）。
- * 单文件删除（TaskListView.confirmRemove）与批量删除（TaskContextMenu）共用：
- * 两者都把结果逐条传给 `remove`，AC-13「已完成任务正式文件始终不删」由后端
- * `ops.rs` 的 `delete_files && status != Completed` 保证，前端不复制该规则。
+ * 删除确认按钮 key → `deleteFiles` 语义（**唯一实现**）。
+ *
+ * 只认 `with-files` 一个 key 为 true；`cancel` / `remove`（未完成任务的单按钮）/
+ * 未知 key 一律 false——**默认不删文件**，任何拼写漂移都不会误删磁盘数据。
+ * 单文件删除（TaskListView）与批量删除（TaskContextMenu）共用本函数，
+ * 不各自再写 `key === 'with-files'`。
  */
 export function deleteFilesFromKey(key: string): boolean {
   return key === 'with-files';

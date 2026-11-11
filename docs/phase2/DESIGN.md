@@ -230,9 +230,10 @@ P0 规则复述（违反 = 退回）：
 
 **两套「选中」语义（最容易写错的点）**：`TaskListView.selectedId: ref<string \| null>` 是 **roving tabindex 键盘焦点行**（单行，决定 ↑↓ / Space / Delete / Enter 落在谁身上，驱动 `rowTabIndex` / `moveSelection` / `focusRow` 与 `:focus-visible` 焦点环）；`useTaskSelection()` 的 `checkedIds: Set<string>` 是**选择集合**（多行，驱动 `.row-selected` 高亮、右键菜单单选/多选切换、批量动作作用于谁）。两者不互相赋值、不互相覆盖；composable 内不出现 `selectedId`，主视图不自行维护第二份选择集合。
 
-**删除流程（F8）**：
-- 删除**未完成**任务（pending/downloading/paused/failed）：确认弹窗——标题"删除任务"，正文"「{文件名}」尚未完成，是否同时删除已下载的部分文件？"，按钮：Ghost"取消" / Secondary"仅删除任务" / Destructive-soft"删除任务和文件"（删除文件调 `remove_task` 且 `delete_files: true`）。
-- 删除**已完成**任务：无弹窗，直接移除记录（文件永不删，AC-13）+ Toast "已移除「{文件名}」" + 操作链接"撤销"（5s 内可恢复）。
+**删除流程（F8）**：两条路径语义不同，确认框按任务状态派生按钮。
+- 删除**未完成**任务（pending/downloading/paused/failed）：标题"删除任务"，正文"「{文件名}」将从列表中移除，未完成的下载进度会一并清除。"，按钮：Ghost"取消" / Destructive-soft"删除"。未完成任务磁盘上只剩 `.part`，后端无论按哪个键都会清掉，因此**不给"是否删文件"的选择**（给了就是假选项）。
+- 删除**已完成**任务：标题"删除任务"，正文"「{文件名}」已下载完成。选择「删除任务和文件」会一并删除磁盘上的文件。"，按钮：Ghost"取消" / Secondary"仅删除任务" / Destructive-soft"删除任务和文件"（`remove_task` 的 `delete_files` 为 true）。选"仅删除任务"给 Toast + 5s"撤销"；选"删除任务和文件"**不给撤销**（文件已删，撤销无从恢复），Toast 文案用 `remove.removedWithFileToast`。
+- 已完成任务也必须先确认再删：磁盘上有成品文件，"是否连文件一起删"只有用户能回答。
 
 ### 2.6 列表五态
 
@@ -303,7 +304,7 @@ Plus 16（新建）· Search 16（搜索）· X 16（清空搜索）· ArrowDown
 - **多选（选中 >1 条）**：顶部只读提示「已选 {n} 个任务」（`bulk.selected` + `ListChecks` 16）→「全部暂停」（`bulk.pauseAll`）/「全部开始」（`bulk.resumeAll`）/「全部重试」（`bulk.retryAll`）/ 分隔线 /「删除选中任务…」（`bulk.removeSelected`）。
   - 三项可用性统一用 `bulkTargetIds(kind, selected).length > 0` 判定；无可操作对象时 **disabled 而非隐藏**，保持菜单项数稳定。
   - 菜单高度 `estimatedHeight` 由 `ACTIONS.length` 动态算出后传给 `anchoredStyleAt`，贴近屏幕底部时翻转判断才不会错（写死 148 会在菜单项变化时误判）。
-  - 删除点开三按钮 `ConfirmDialog`（取消 / `remove.onlyTask` / `remove.withFiles`），`deleteFilesFromKey(key)` 单点映射；含已完成任务时用 `bulk.removeMessageCompleted` 明确 AC-13。删除成功后 `emit('removed', result.succeeded)` → `removeIds()` 清理选择。
+  - 删除点开三按钮 `ConfirmDialog`（取消 / `remove.onlyTask` / `remove.withFiles`），`deleteFilesFromKey(key)` 单点映射；含已完成任务时用 `bulk.removeMessageCompleted` 说明"只有选删除任务和文件才删文件"。删除成功后 `emit('removed', result.succeeded)` → `removeIds()` 清理选择。
   - 确认弹窗打开期间菜单不能因外部点击 / Esc 被卸载（否则会连带销毁弹窗），用 `confirmOpen` 守卫；Esc 交给弹窗的 capture 监听消费。
 
 **按钮可用性与执行目标同源**：`can.pause/resume/retry` 与 `useBulkActions.run()` 都取 `bulkTargetIds`——暂停只对 `downloading`、开始只对 `paused`、重试只对 `failed`。禁止在组件里再写一份 `status === 'paused'` 判据（两份判据必然随需求变更分叉）。
@@ -315,9 +316,9 @@ Plus 16（新建）· Search 16（搜索）· X 16（清空搜索）· ArrowDown
 - `resume_conflict` 仍复用 `isResumeConflict` 单点判定 → `uiStore.openResumeConflict(id)`。
 - **一次刷新**：循环结束才 `tasksStore.refresh()` 一次，避免 N 条动作触发 N 次 `list_tasks`（性能盲区：循环内 IO 放大）。
 
-**批量删除照搬单文件语义**：`deleteFilesFromKey(key)` 得出布尔值后**逐条**传给 `removeTask(id, deleteFiles)`。**不得改 AC-13**：已完成任务正式文件始终不删，由后端 `ops.rs` 的 `delete_files && status != Completed` 保证，前端不复制该规则。
+**批量删除照搬单文件语义**：`deleteFilesFromKey(key)` 得出布尔值后**逐条**传给 `removeTask(id, deleteFiles)`。后端两条规则不同：`.part` 一律清（未完成任务），成品文件只在 `deleteFiles=true` 时删（已完成任务）。判据单点在后端 `http/ops.rs`，前端不复制该规则、也不写 `key === 'with-files'`。
 
-**回归护栏**：`composables/useTaskSelection.test.ts`（selectOnly / Ctrl 切换 / Ctrl 连点 3 行无覆盖 / Ctrl+A 只作用 visible / 文本输入不拦截 / Esc / removeIds / selectIds / Shift 连选 / 筛选派生）、`composables/useBulkActions.test.ts`、`utils/bulk.test.ts`、`views/TaskListView.bulk.test.ts`（无批量条无复选框、点击/快捷键接线、单选菜单零「全部」、多选菜单有批量项、判据只走 `bulkTargetIds`、`deleteFilesFromKey` 单点、文件丢失呈现态未丢）、`components/task/FileMissing.guard.test.ts`、`composables/useMarqueeSelection.test.ts`、`views/Marquee.guard.test.ts`、`stores/tasks.defaultView.test.ts`。
+**回归护栏**：`composables/useTaskSelection.test.ts`（selectOnly / Ctrl 切换 / Ctrl 连点 3 行无覆盖 / Ctrl+A 只作用 visible / 文本输入不拦截 / Esc / removeIds / selectIds / Shift 连选 / 筛选派生）、`composables/useBulkActions.test.ts`、`utils/bulk.test.ts`、`views/TaskListView.bulk.test.ts`（无批量条无复选框、点击/快捷键接线、单选菜单零「全部」、多选菜单有批量项、判据只走 `bulkTargetIds`、`deleteFilesFromKey` 单点、确认框按状态派生按钮、文件丢失呈现态未丢）、`components/task/FileMissing.guard.test.ts`、`composables/useMarqueeSelection.test.ts`、`views/Marquee.guard.test.ts`、`stores/tasks.defaultView.test.ts`。
 
 ### 2.9.1 空白区拖框多选（marquee，2026-11 第七轮用户实测）
 
@@ -386,13 +387,14 @@ Plus 16（新建）· Search 16（搜索）· X 16（清空搜索）· ArrowDown
 
 - 宽 **480px**，自适应高度（max-height 80vh）；bg `--surface`、`--radius-lg`、`--elev-raised`、padding 24px；遮罩全屏 `--overlay`（点击遮罩 = 取消，若已输入内容先弹"放弃"确认：正文"已填入的内容将丢失"，按钮"继续编辑/放弃"）；z-index 1200。
 - **头部/底部固定，仅内容区滚动**（2026-11 用户实测：滚动条贯穿整个弹窗，标题与底部按钮跟着滚）：`.panel` 为 `display:flex; flex-direction:column; max-height:80vh; overflow:hidden`；`.head { flex:none }` 固定顶部；默认插槽包一层 `.body { flex:1; min-height:0; overflow-y:auto }` 作**唯一滚动容器**；新增可选 `#footer` 具名插槽 `.foot { flex:none }` 固定底部。滚动条垂直范围只从标题栏下沿到底部操作区上沿。短内容（如确认弹窗）不出现滚动条，视觉位置不变。
+- **滚动容器必须给焦点环留画环余量**（2026-11 用户实测："获得焦点时左右边框没有"）：`--focus-ring` 是 3px **外环**，而 `.body` 原本水平内边距为 0、宽度正好等于输入框宽度，`overflow-y:auto` 会把外环的左右两段（视觉上连同输入框的 1px 边框一起）裁掉，只剩上下两段，看起来就像"左右没有边框"。修法：`.body` 加 `padding: var(--space-1)` + **等量负** `margin: calc(var(--space-1) * -1)`——内容盒位置与宽高完全不变，只是给外环腾出 4px。判据：负 margin 必须与 padding 等量抵消、不改变内容盒几何，否则就是"把内容压上去"的布局 hack，一律退回。
 - 头部：标题"新建下载任务"16px/500 `--fg` + 右上 X 16 图标按钮（28px hit，aria-label "关闭"）。头部下方 16px 间距进入主体。
 - 底部按钮区移到 `#footer` 插槽后，间距靠 `.footer` 的 `margin-top: 24px`（= 原 form 内 16px gap + 原 8px margin）+ `padding-top: 16px` + 1px `--border-soft` 分隔线保持原观感。
 - **跨插槽提交**：`<form id="add-task-form" @submit.prevent="submit">` 在默认插槽，提交按钮在 `#footer` 插槽（form 之外），用 `type="submit" form="add-task-form"` 关联。`BaseButton` 把 `form` 显式声明为 prop 并绑定到根 `<button>`（其模板首节点原为注释 → Fragment 根会静默吞掉透传属性，已修复）。**只有一份 `submit` 实现**：点击提交按钮，或在单行输入框（文件名 / 展开后的分片数）内按 Enter 触发隐式提交，两条路径都落到同一个 form `submit` 事件 → `@submit.prevent="submit"`；不写第二份 `@click="submit"`。URL `<textarea>` 内按 Enter 依 HTML 规范是换行（textarea 不参与隐式提交，多条 URL 靠换行分隔），不是提交；弹窗初态只有这一个 textarea，文件名 / 分片数输入为条件渲染。因 `form="add-task-form"` 已让该按钮成为表单 default button，隐式提交与「blocking field 数量」兜底规则无关。
 - 进入动画 200ms fade + scale 0.98→1；关闭 150ms fade-out。
 - **焦点管理**：打开即焦点 URL 输入框；Tab 循环困在弹窗内；Esc 关闭（同遮罩逻辑）。焦点困环 / Esc / 遮罩点击 / 进入动画 / z-index 均不因三段式布局改动。
 - **信息行 / 目录行不被遮挡（2026-11 截图补充自检）**：`.info-row`（「1.8 GB ✓ 支持分段加速」）与其下方 `AddDirRow` 的「保存到」靠 `.form` 的 `gap: var(--space-4)` 分隔；样式链内**无绝对定位、无负 margin**（唯一例外是 `AddAdvancedOptions` 的 `::-webkit-slider-thumb { margin-top: -6px }`，在表单控件内部，不影响行间布局）。
-  - **仓库内可复跑证据**：`components/ModalLayout.guard.test.ts`（14 用例）**全部是源码文本静态断言**——vitest `environment: 'node'`，仓库无 playwright / puppeteer / jsdom 依赖，新增 3 条只守结构不变量：`.form` flex 列 + gap16、`.info-row` display:flex、样式链零 `position:absolute|fixed` 与零负 margin、滑块 thumb 唯一例外、`.head`/`.foot` flex:none + `.body` 唯一滚动容器。**已对该护栏做过一次变异验证**（过程见交付回执：注入 `margin-top:-12px` → 1 用例变红 → `cmp` 字节一致恢复 → 14/14 全绿；QA 另以 `margin-top:-8px` 独立复现，判别力非作者自述）。**这些断言不是浏览器实测，不构成视觉验收**。
+  - **仓库内可复跑证据**：`components/ModalLayout.guard.test.ts`（15 用例）**全部是源码文本静态断言**——vitest `environment: 'node'`，仓库无 playwright / puppeteer / jsdom 依赖，新增 4 条只守结构不变量：`.form` flex 列 + gap16、`.info-row` display:flex、样式链零 `position:absolute|fixed` 与零负 margin、滑块 thumb 唯一例外、`.head`/`.foot` flex:none + `.body` 唯一滚动容器 + `.body` 的 padding/负 margin 必须等量成对出现（焦点环留白）。**已对该护栏做过一次变异验证**（过程见交付回执：注入 `margin-top:-12px` → 1 用例变红 → `cmp` 字节一致恢复 → 14/14 全绿；QA 另以 `margin-top:-8px` 独立复现，判别力非作者自述）。**这些断言不是浏览器实测，不构成视觉验收**。
   - **一次性外部测量（非仓库证据、不可从仓库复跑）**：曾把 `ui/dist/assets/*.css` 复制到临时目录、按真实 SFC DOM 带编译后 `data-v-*` 作用域属性还原弹窗，用已安装的 Chrome 无头 `--dump-dom` 读回 rect（夹具仅在测量时 `animation:none` 关闭 `panel-in` 的 scale 以免坐标漂移；临时夹具已删除）。该次观察：scrollTop=0 / 半程 / 到底三处 head/body/foot 互不重叠，info-row 与「保存到」间距 16px，底部按钮始终完整可见；截图态（高级收起 / 无警示 / 无错误）滚到底时 info-row +「保存到」+ 目录行 + 底部按钮同时完整可见。**这是一次性外部夹具观察，不是自动化用例，也不等于 Tauri WebView2 真实 GUI 验收**。
   - **未做 GUI 实测**：Tauri WebView2 真实窗口截图与人眼复核、深浅主题对比度、真实 GUI 滚动条与 border-top 贴合度均未做，本项明确记为「未验证」，不得计入功能验收结论（§9.1 补充口径：静态护栏 + 行为单测不等于功能验收）。
 
@@ -590,7 +592,7 @@ Settings 20（顶栏激活态）· FolderOpen 16（目录行：选择目录 / �
 | 移除已完成 | Toast：已移除「{文件名}」（操作：撤销） |
 | 清除统计 | 标题：清除统计数据？；正文：清除后无法恢复。统计数据仅存本机，不上传任何数据。；按钮：取消 / 清除 |
 | 批量 | Toast：**{total} 项中有 {failed} 项未完成，请查看错误提示**（部分失败汇总；单条失败仍各走 `toast.saveFailed`）。批量暂停/开始/重试成功**不弹汇总 toast**，由列表状态即时反馈 |
-| 批量删除确认（含已完成任务） | 将删除选中的 {n} 个任务。已完成任务的正式文件不会被删除。（AC-13 显式告知，避免误以为「删除任务和文件」会删已完成文件） |
+| 批量删除确认（含已完成任务） | 将删除选中的 {n} 个任务。选「删除任务和文件」才会删除已完成任务的文件。（AC-13 显式告知，避免误以为删任务必然连文件一起删） |
 | 保存失败 | Toast：**后端 AppError → 原样展示**（"任务不存在: t1" / "开启开机自启失败: ..."）；**非 AppError → "保存失败：{原因}"** |
 | 打开文件 / 打开目录失败 | Toast：**后端 AppError → 原样展示**（"文件不存在：{路径}" / "打开文件失败：{原因}" / "打开路径必须是绝对路径：{路径}" / "打开所在目录失败: ..."）；**非 AppError → "打开失败：{原因}"**（命令未注册、IPC 原始串等） |
 | 列表加载失败 | 任务列表加载失败 / {错误详情}（按钮：重试） |

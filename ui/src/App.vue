@@ -49,6 +49,7 @@ async function confirmRedownload(): Promise<void> {
   uiStore.closeResumeConflict();
   if (!task) return;
   try {
+    // 重新下载：旧成品文件一并删掉，避免半旧半新
     await tasksStore.remove(task.id, true);
     await addTask({ url: task.url, filename: task.filename, dir: task.dir });
     toast.push('success', 'add.addedToast', { params: { n: 1 } });

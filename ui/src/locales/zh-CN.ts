@@ -84,10 +84,14 @@ export const zhCN = {
   'add.discard': '放弃',
 
   'remove.title': '删除任务',
-  'remove.message': '「{filename}」尚未完成，是否同时删除已下载的部分文件？',
+  'remove.message': '「{filename}」将从列表中移除，未完成的下载进度会一并清除。',
+  'remove.messageCompleted':
+    '「{filename}」已下载完成。选择「删除任务和文件」会一并删除磁盘上的文件。',
+  'remove.confirm': '删除',
   'remove.onlyTask': '仅删除任务',
   'remove.withFiles': '删除任务和文件',
   'remove.removedToast': '已移除「{filename}」',
+  'remove.removedWithFileToast': '已移除「{filename}」及其文件',
 
   /** 迅雷式多选右键菜单（DESIGN.md §2.9）：不再有批量条 / 复选框 / 全选入口 */
   'bulk.menuAria': '批量任务操作',
@@ -98,8 +102,9 @@ export const zhCN = {
   'bulk.removeSelected': '删除选中任务…',
   'bulk.removeTitle': '批量删除任务',
   'bulk.removeMessage': '将删除选中的 {n} 个任务。',
-  /** 含已完成任务：明确 AC-13，避免用户误以为「删除任务和文件」会删掉已完成文件 */
-  'bulk.removeMessageCompleted': '将删除选中的 {n} 个任务。已完成任务的正式文件不会被删除。',
+  /** 含已完成任务：明确告知「仅删除任务」不动磁盘文件 */
+  'bulk.removeMessageCompleted':
+    '将删除选中的 {n} 个任务。选「删除任务和文件」才会删除已完成任务的文件。',
   'bulk.partialFailed': '{total} 项中有 {failed} 项未完成，请查看错误提示',
 
   'conflict.title': '资源已变化',
@@ -118,7 +123,6 @@ export const zhCN = {
   'settings.groupDownload': '下载',
   'settings.loadFailed': '设置加载失败',
   'settings.groupGeneral': '通用',
-  'settings.groupData': '数据',
   'settings.downloadDir': '下载目录',
   'settings.changeDir': '更改下载目录',
   'settings.defaultSegments': '默认分片数',
@@ -131,11 +135,6 @@ export const zhCN = {
   'settings.closeToTrayHelper': '关闭后仍在后台下载，可从托盘图标重新打开',
   'settings.notify': '下载完成系统通知',
   'settings.notifyHelper': '每个任务完成时发送系统通知',
-  'settings.statsDesc': '统计数据仅保存在本机，用于改进产品，不上传任何数据',
-  'settings.clearStats': '清除统计数据',
-  'settings.clearStatsTitle': '清除统计数据？',
-  'settings.clearStatsMessage': '清除后无法恢复。统计数据仅存本机，不上传任何数据。',
-  'settings.clear': '清除',
   'settings.themeNote': '外观跟随 Windows 系统设置（深色/浅色）',
   'settings.unit': 'MB/s',
   'settings.groupUpdate': '更新',
@@ -173,7 +172,6 @@ export const zhCN = {
   'toast.asIs': '{reason}',
   /** 仅用于**非 AppError**（无业务语义的裸原因：运行时错误 / IPC 原始串 / 命令未注册）时的前缀 */
   'toast.openFailed': '打开失败：{reason}',
-  'toast.clearedStats': '已清除本地统计',
 
   'notify.unknownFile': '未知文件',
   /** 系统 toast 的标题行只承担**事件语义**：应用名由 Windows 从 AUMID 的 DisplayName 渲染，

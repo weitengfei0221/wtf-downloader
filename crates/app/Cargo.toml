@@ -5,6 +5,16 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 
+# The package is named `app` so `cargo -p app` stays short, but the shipped
+# executable must carry the product name: without this, the installer drops
+# `app.exe` into the install dir. Naming the bin is what Tauri's own docs
+# recommend over `mainBinaryName` (that one renames the cargo output after the
+# fact). NSIS reads this name as MAINBINARYNAME, and on upgrade it reads the
+# previous value from the registry and deletes the stale `app.exe`.
+[[bin]]
+name = "wtf-downloader"
+path = "src/main.rs"
+
 [lib]
 name = "wtf_downloader_app"
 crate-type = ["staticlib", "cdylib", "rlib"]
@@ -19,6 +29,11 @@ tauri-plugin-autostart = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-dialog = "2"
+# Clipboard: the WebView's own `navigator.clipboard.readText()` makes WebView2
+# prompt "localhost:5173 wants to see text and images copied to the clipboard"
+# on *every* call, and the browser never remembers the answer. Reading through
+# this plugin goes over IPC instead, so the prompt never appears.
+tauri-plugin-clipboard-manager = "2"
 # Updater: signature verification is mandatory and cannot be disabled. Public
 # key lives in tauri.conf.json (content, not a path); the private key is only
 # supplied at build time via TAURI_SIGNING_PRIVATE_KEY, never committed.

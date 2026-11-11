@@ -31,10 +31,15 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_dialog::init())
+        // Clipboard: the frontend reads the clipboard through this plugin
+        // (capability `clipboard-manager:allow-read-text`) rather than the Web
+        // Clipboard API, because WebView2 asks for permission on every single
+        // `navigator.clipboard.readText()` call and never remembers the answer.
+        .plugin(tauri_plugin_clipboard_manager::init())
         // Updater registers no new IPC command: the frontend calls the plugin's
         // own commands (updater:check / updater:download-and-install), which are
         // gated by capabilities/default.json. Keeping it out of
-        // generate_handler! preserves the frozen 19-command contract.
+        // generate_handler! preserves the frozen 18-command contract.
         .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             commands::tasks::probe_url,
@@ -53,7 +58,6 @@ pub fn run() {
             commands::config::set_global_speed_limit,
             commands::config::set_autostart,
             commands::config::open_file_location,
-            commands::config::clear_stats,
             commands::open::open_path,
             commands::notify::notify_user,
         ])
@@ -62,7 +66,7 @@ pub fn run() {
             // the first toast can be shown (src/notify/mod.rs explains why the
             // plugin's own path cannot supply it in dev/portable runs). Never
             // fails startup.
-            notify::prepare();
+            notify::prepare(app.handle());
 
             // Engine construction: DB under the app data dir, config load,
             // startup recovery (AC-11), then state + forwarding + tray.

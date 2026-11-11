@@ -13,9 +13,10 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue';
 /**
  * 多选右键菜单（DESIGN.md §2.9）：选中 >1 条时替代 TaskMoreMenu。
  * 顶部只读提示「已选 {n} 个任务」→ 全部暂停 / 全部开始 / 全部重试 → 分隔线 →
- * 删除选中任务…（三按钮确认）。三项可用性统一取 bulkTargetIds(kind, selected)，
- * 无可操作对象时 disabled 而非隐藏（菜单项数恒定，estimatedHeight 才不会算错）。
- * 删除语义（deleteFilesFromKey / AC-13 文案）与单文件删除共用唯一实现。
+ * 删除选中任务…（三按钮确认：取消 / 仅删除任务 / 删除任务和文件）。
+ * 三项可用性统一取 bulkTargetIds(kind, selected)，无可操作对象时 disabled 而非隐藏
+ * （菜单项数恒定，estimatedHeight 才不会算错）。
+ * 删除语义单点在后端（AC-13）：`.part` 一律清；成品文件只随 `with-files` 删。
  * z-index 1000；点外部 / Esc / 滚动 / resize 关闭；Esc 先消费，不连带清空选择。
  */
 const props = defineProps<{ tasks: TaskRecord[]; point: AnchorPoint }>();

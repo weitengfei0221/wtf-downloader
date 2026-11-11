@@ -8,7 +8,8 @@
 // This is a TRANSIENT, READ-ONLY existence check - NOT a new task state:
 //   * no status transition, no TaskRecord / Downloader trait change,
 //   * no DB write, no event emission, no file deletion (remove / AC-13
-//     untouched: http/ops.rs:194 keeps `delete_files && status != Completed`).
+//     untouched: http/ops.rs only clears `.part` of non-Completed tasks, and
+//     drops a finished file only when `delete_files` is true).
 //
 // Surface: reuse the existing `Downloader::list` read path ONCE for the whole
 // batch; the "which rows lost their file" decision is a pure function over the

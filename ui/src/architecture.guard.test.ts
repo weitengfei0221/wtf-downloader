@@ -35,6 +35,7 @@ const NEEDLE = ['@tauri', 'apps/api'].join('-');
 const PLUGIN_NEEDLES = [
   ['@tauri', 'apps/plugin-updater'].join('-'),
   ['@tauri', 'apps/plugin-dialog'].join('-'),
+  ['@tauri', 'apps/plugin-clipboard-manager'].join('-'),
 ];
 
 describe('扫描分母有效（非空集，防止空集假通过）', () => {
@@ -83,7 +84,7 @@ describe('分层：仅 src/api/ 可直连 Tauri IPC 包', () => {
     expect(sources.some((s) => s.path.startsWith('api/') && s.text.includes(NEEDLE))).toBe(true);
   });
 
-  it('Tauri 插件包（updater / process / dialog）也只在 api/ 层直连', () => {
+  it('Tauri 插件包（updater / dialog / clipboard）也只在 api/ 层直连', () => {
     const hits = sources
       .filter((s) => !s.path.startsWith('api/'))
       .filter((s) => PLUGIN_NEEDLES.some((needle) => s.text.includes(needle)))
@@ -91,13 +92,14 @@ describe('分层：仅 src/api/ 可直连 Tauri IPC 包', () => {
     expect(hits).toEqual([]);
   });
 
-  it('api/ 层确实直连了 updater / process 插件（证明这条护栏有判别力）', () => {
+  it('api/ 层确实直连了 updater / dialog / clipboard 插件（证明这条护栏有判别力）', () => {
     const apiText = sources
       .filter((s) => s.path.startsWith('api/'))
       .map((s) => s.text)
       .join('\n');
     expect(apiText).toContain(PLUGIN_NEEDLES[0]);
     expect(apiText).toContain(PLUGIN_NEEDLES[1]);
+    expect(apiText).toContain(PLUGIN_NEEDLES[2]);
   });
 });
 

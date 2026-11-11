@@ -4,6 +4,7 @@ import { AlertCircle, Check, LoaderCircle, Plus, TriangleAlert } from '@lucide/v
 import { t } from '@/locales/zh-CN';
 import { addTask, probeUrl } from '@/api/tasks';
 import { pickDirectory } from '@/api/config';
+import { readClipboardText } from '@/api/clipboard';
 import { errMessage, isComposedError } from '@/api/invoke';
 import type { ProbeResult } from '@/api/types';
 import { isHttpUrl, formatBytes } from '@/utils/format';
@@ -115,13 +116,15 @@ async function reset(): Promise<void> {
   dir.value = configStore.config?.downloadDir ?? '';
   segments.value = configStore.config?.defaultSegments ?? 16;
   try {
-    const text = (await navigator.clipboard.readText()).trim();
+    // Via the clipboard plugin, not `navigator.clipboard`: the Web API makes
+    // WebView2 show a permission prompt on every single read.
+    const text = (await readClipboardText()).trim();
     if (text !== '' && !text.includes('\n') && isHttpUrl(text)) {
       urlText.value = text;
       clipPrefill.value = true;
     }
   } catch {
-    // 剪贴板不可读（WebView 权限/非 Tauri 环境）：静默跳过预填（F6 尽力而为）
+    // 剪贴板不可读（空剪贴板 / 非文本内容 / 插件不可用）：静默跳过预填（F6 尽力而为）
   }
 }
 

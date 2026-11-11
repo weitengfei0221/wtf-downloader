@@ -84,6 +84,17 @@ export interface AnchorPoint {
   y: number;
 }
 
+/**
+ * ConfirmDialog 的按钮项（**唯一定义**）。`safe` 标记 Enter 触发项，即"最安全项"
+ * （取消 / 仅删除任务这类不破坏数据的动作）。
+ */
+export interface ConfirmAction {
+  key: string;
+  label: string;
+  variant?: 'primary' | 'secondary' | 'ghost' | 'destructive';
+  safe?: boolean;
+}
+
 /** 浮层定位可注入视口尺寸（便于单测；缺省读 window） */
 interface PointOptions {
   width?: number;

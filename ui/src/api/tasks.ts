@@ -57,6 +57,14 @@ export function retryTask(taskId: string): Promise<TaskRecord> {
   return invoke<TaskRecord>('retry_task', { taskId });
 }
 
+/**
+ * 删除任务。
+ * - `deleteFiles: false`「仅删除任务」：只删记录；未完成任务的 `.part` 由后端清除，
+ *   已完成任务的文件保留在磁盘上。
+ * - `deleteFiles: true`「删除任务和文件」：连磁盘文件一起删（已完成任务的成品文件）。
+ *
+ * 两条路径的判定都在引擎 `http/ops.rs` 一处，前端只负责把用户选择传下去。
+ */
 export function removeTask(taskId: string, deleteFiles: boolean): Promise<null> {
   return invoke<null>('remove_task', { taskId, deleteFiles });
 }

@@ -172,12 +172,3 @@ pub async fn open_file_location(
         .map_err(|e| AppError::new("engine_error", format!("打开所在目录失败: {}", e)))?;
     Ok(())
 }
-
-/// Clear the local statistics cache (contract gap fix, frontend api/config.ts):
-/// no arguments, null return. Resets the shared GlobalStats values the tray
-/// tooltip reads; live downloads repopulate them on the next 4Hz tick.
-#[tauri::command]
-pub async fn clear_stats(state: State<'_, AppState>) -> CmdResult<()> {
-    state.stats.clear();
-    Ok(())
-}

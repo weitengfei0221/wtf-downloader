@@ -32,14 +32,6 @@ export function setGlobalSpeedLimit(bytesPerSec: number | null): Promise<null> {
   return invoke<null>('set_global_speed_limit', { bytesPerSec });
 }
 
-/**
- * 清除本地统计。SPEC.md §5.1 命令清单（15 条）未含 clear_stats 命令——
- * 契约缺口，已回传 team-lead；后端落此命令后 UI 即可用。
- */
-export function clearStats(): Promise<null> {
-  return invoke<null>('clear_stats');
-}
-
 /** 系统目录选择器（tauri-plugin-dialog，后端需注册该插件） */
 export async function pickDirectory(defaultPath?: string): Promise<string | null> {
   const selected = await openDialog({ directory: true, multiple: false, defaultPath });

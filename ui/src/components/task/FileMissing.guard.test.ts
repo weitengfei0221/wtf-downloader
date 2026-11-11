@@ -170,13 +170,13 @@ describe('文案与批量删除 AC-13', () => {
     expect(body).not.toContain('status =');
   });
 
-  it('含已完成任务的批量删除文案写明「文件不会被删除」（AC-13）', () => {
-    expect(locales).toContain('已完成任务的正式文件不会被删除');
+  it('含已完成任务的批量删除文案说明「只有选删除任务和文件才删文件」', () => {
+    expect(locales).toContain('选「删除任务和文件」才会删除已完成任务的文件');
     expect(contextMenu).toContain('hasCompleted.value');
     expect(contextMenu).toContain("t('bulk.removeMessageCompleted'");
   });
 
-  it('多选菜单删除仍是三按钮 ConfirmDialog（取消 / 仅删除任务 / 删除任务和文件）', () => {
+  it('多选菜单删除是三按钮 ConfirmDialog（取消 / 仅删除任务 / 删除任务和文件）', () => {
     expect(contextMenu).toContain("key: 'cancel'");
     expect(contextMenu).toContain("key: 'task-only'");
     expect(contextMenu).toContain("key: 'with-files'");
