@@ -116,11 +116,16 @@ Get-Content target\release\bundle\nsis\wtf-downloader_0.1.1_x64-setup.exe.sig -R
 | Release tag 与附件命名 | 模板用 `v0.1.1` | 与实际 Release 保持一致 |
 | 私钥离线备份 | 尚未确认已完成 | 由用户执行，见 §2 |
 | 品牌图标 | **已配置**：`wtf-downloader-*` 四件套 + 六层 ICO，安装程序简体中文 | 见 §8.1；欢迎页侧栏大图仍需 BMP，未配置 |
-| 打包 | 用户自行执行，本轮未打包 | 见 README「打包」与 §4 |
+| 打包 | **已执行**：`npx --no-install @tauri-apps/cli build`（release + updater 签名），产物在 `target/release/bundle/nsis/` | 见 README「打包」与 §4 |
+| 已发布版本 | `v0.1.0`、`v0.1.1`，均为 Public 仓库的非 draft Release，各带 `.exe` + `latest.json` 两个附件 | 0.1.1 的 `latest.json` 由 `.sig` 内容生成，`url` 指向 v0.1.1 附件；匿名 curl 端点返回 HTTP 200 |
 
 ## 8. 明确未验证
 
 本轮只做配置与编译校验，**未**执行 `tauri build`、未生成安装包、未发布任何 Release。以下均属未验证，不能视为通过：真实 GitHub Release 的端到端更新、生产 TLS 与 2XX/非 2XX 分支行为、WebView2 运行期、安装完成后手动重新打开的行为、SmartScreen 表现、Windows 安装阶段自动退出的衔接。
+
+> **2026-11-11 更新**：`v0.1.0`、`v0.1.1` 已实际打包并发布，端点匿名可达（HTTP 200，返回 0.1.1）。
+> 但「**旧版客户端 → 检测到更新 → 下载 → 校验签名 → 安装 → 重启**」这条完整链路**仍未做过真实演练**，
+> 也就是本节列的项依旧是未验证状态，只是前置条件已具备。
 
 ### 8.1 品牌图标与安装界面（已配置，未做安装包实测）
 
