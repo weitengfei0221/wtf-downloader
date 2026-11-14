@@ -1,6 +1,7 @@
 // Config command validation tests.
 
 use super::*;
+use downloader_engine::protocol::ThemePreference;
 
 #[test]
 fn patch_validation_accepts_good_values() {
@@ -10,6 +11,7 @@ fn patch_validation_accepts_good_values() {
         global_speed_limit_bps: Some(Some(1024 * 1024)),
         notify_on_complete: Some(false),
         minimize_to_tray: Some(false),
+        theme: Some(ThemePreference::Light),
     };
     assert!(validate_patch(&patch).is_ok());
     assert!(validate_patch(&ConfigPatchArg::default()).is_ok());
@@ -50,6 +52,7 @@ fn config_response_serializes_camel_case() {
         global_speed_limit_bps: None,
         notify_on_complete: true,
         minimize_to_tray: false,
+        theme: ThemePreference::Dark,
         autostart_enabled: false,
     };
     let json = serde_json::to_value(&resp).unwrap();
@@ -58,5 +61,7 @@ fn config_response_serializes_camel_case() {
     assert!(json["globalSpeedLimitBps"].is_null());
     assert_eq!(json["notifyOnComplete"], true);
     assert_eq!(json["minimizeToTray"], false);
+    // Enum payload keeps its own lowercase rule despite the struct's camelCase.
+    assert_eq!(json["theme"], "dark");
     assert_eq!(json["autostartEnabled"], false);
 }

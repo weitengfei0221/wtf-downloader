@@ -273,4 +273,7 @@ pub(crate) fn apply_patch(cfg: &mut EngineConfig, patch: &crate::protocol::Engin
     if let Some(v) = patch.minimize_to_tray {
         cfg.minimize_to_tray = v;
     }
+    if let Some(v) = patch.theme {
+        cfg.theme = v;
+    }
 }

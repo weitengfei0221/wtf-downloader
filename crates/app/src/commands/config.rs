@@ -7,7 +7,7 @@ mod tests;
 use crate::commands::error::{AppError, CmdResult};
 use crate::commands::tasks::validate_limit;
 use crate::state::AppState;
-use downloader_engine::protocol::EngineConfigPatch;
+use downloader_engine::protocol::{EngineConfigPatch, ThemePreference};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tauri::State;
@@ -23,6 +23,9 @@ pub struct ConfigResponse {
     pub global_speed_limit_bps: Option<u64>,
     pub notify_on_complete: bool,
     pub minimize_to_tray: bool,
+    /// Lowercase enum values (`"system"|"light"|"dark"`); `rename_all` on the
+    /// struct does not apply to enum payloads, the enum carries its own rule.
+    pub theme: ThemePreference,
     pub autostart_enabled: bool,
 }
 
@@ -35,6 +38,7 @@ pub struct ConfigPatchArg {
     pub global_speed_limit_bps: Option<Option<u64>>,
     pub notify_on_complete: Option<bool>,
     pub minimize_to_tray: Option<bool>,
+    pub theme: Option<ThemePreference>,
 }
 
 /// Validate the partial patch before it reaches the engine.
@@ -74,6 +78,7 @@ async fn config_response(
         global_speed_limit_bps: cfg.global_speed_limit_bps,
         notify_on_complete: cfg.notify_on_complete,
         minimize_to_tray: cfg.minimize_to_tray,
+        theme: cfg.theme,
         autostart_enabled,
     })
 }
@@ -100,6 +105,7 @@ pub async fn set_config(
         global_speed_limit_bps: patch.global_speed_limit_bps,
         notify_on_complete: patch.notify_on_complete,
         minimize_to_tray: patch.minimize_to_tray,
+        theme: patch.theme,
     };
     // Keep the sync window-close handler's mirror in step with the new value.
     if let Some(v) = patch.minimize_to_tray {
