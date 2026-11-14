@@ -21,7 +21,7 @@ P0 规则复述（违反 = 退回）：
 
 ### 1.1 视觉主题关键词
 
-克制、精准、轻量、黑白反差、数据密集。深色为默认展示主题（挂机场景），深浅双主题跟随系统；层级靠亮度递进而非阴影（`--bg → --surface → --surface-2 → --surface-3`）；hairline 边框；唯一的"强调"是最高对比度中性色 primary（浅色近黑 / 深色近白），每屏实心 ≤2 处。
+克制、精准、轻量、黑白反差、数据密集。深色为默认展示主题（挂机场景），深浅双主题由用户在设置页三态选择（跟随系统 / 浅色 / 深色，§4.2）；层级靠亮度递进而非阴影（`--bg → --surface → --surface-2 → --surface-3`）；hairline 边框；唯一的"强调"是最高对比度中性色 primary（浅色近黑 / 深色近白），每屏实心 ≤2 处。
 
 ### 1.2 状态 → 样式映射（任务状态机 → 视觉，核心表）
 
@@ -198,12 +198,16 @@ P0 规则复述（违反 = 退回）：
 
 ### 2.4 状态栏（32px，水平 padding 16px，12px 文字）
 
-**三段网格**（`grid-template-columns: minmax(0,1fr) auto minmax(0,1fr)`，gap 12px）：左 = 计数 · 中 = 总速度 · 右 = 默认目录。
+**三段网格**（`grid-template-columns: minmax(0,1fr) auto minmax(0,1fr)`，gap 12px）：左 = 计数 · 中 = 总速度 · 右 = **更新状态（两态）**。
 
 - 左：`共 12 个任务 · 3 个下载中 · 1 个失败`（`--muted`，数字 mono tabular-nums `--fg-2`，超长省略）。「N 个下载中」按 §2.2 的 `isInProgress` 分组口径计数（含 pending / paused），与分段控件 tab 计数同源，不是 `status === 'downloading'` 的条数。
-- 中：**全部任务总实时速度（只读）**——ArrowDown 16（`--muted`，`aria-hidden`）+ 数值（mono 12px `--fg-2` tabular-nums，十进制格式见 §6.5），如 "12.4 MB/s"。**纯文本状态信息**：不可点击、无 hover 背景、无 title 提示、`cursor: default`；容器 `role="group"` + `aria-label="全部任务总速度（只读）"`。**速度为 0（无下载中任务）时整段隐藏**，避免长期常驻 "0 B/s" 噪音。窄窗（`≤860px`）同样整段隐藏，优先保证计数与目录可见（见 §8）。
-- 右：默认下载目录路径（mono 12px `--meta`，超长省略号，`cursor: default`）+ FolderOpen 16 图标（`--meta`，`aria-hidden="true"`）。**目录为纯展示**：无 click、无 hover 反馈、无 title/aria-label 按钮语义；空路径时整组不渲染。
-- **指针语义（2026-11 用户实测问题 3 + 交互减法）**：状态栏内**没有任何可控件**——计数、总速度、目录三者都是展示信息，一律默认光标。原「FolderOpen 打开下载目录」按钮已移除：opener 受 ACL 路径作用域限制无法授权，点击必然失败（`Not allowed to open path ...`），能点的按钮失败比不可点的图标更误导。打开目录的能力保留在任务行操作组（后端 `open_file_location` 命令）。
+- 中：**全部任务总实时速度（只读）**——ArrowDown 16（`--muted`，`aria-hidden`）+ 数值（mono 12px `--fg-2` tabular-nums，十进制格式见 §6.5），如 "12.4 MB/s"。**纯文本状态信息**：不可点击、无 hover 背景、无 title 提示、`cursor: default`；容器 `role="group"` + `aria-label="全部任务总速度（只读）"`。**速度为 0（无下载中任务）时整段隐藏**，避免长期常驻 "0 B/s" 噪音。窄窗（`≤860px`）同样整段隐藏，优先保证计数与更新状态可见（见 §8）。
+- **右：更新状态（两态，2026-11-13 用户裁决）**——判据单一：`updater.available != null`。
+  - **有可用更新 → `<button class="update-cta">`「● 发现新版本」**（圆点 + 文字，`statusbar.updateAvailable`）：**形态是状态提示、不是按钮**（2026-11-13 用户裁决「不要用按钮，按钮感觉太重了」，同日追加「前面加个小红点还是小绿点……悬浮后再显示背景灰色，正常显示时没有背景，就是圆点 + 文字」）——**常态 `background: transparent`（不铺底）**、文字 `--fg`、无边框、**方形无圆角**（`border-radius: 0`）、高 20px、`padding: 0 var(--space-2)`、`gap: var(--space-2)`、12px/500；**hover 才铺 `--surface-2`**；`:focus-visible` 用全局 `--focus-ring`；`cursor: pointer`。**圆点**：6px 正圆（`border-radius: 50%`）、`background: var(--success)`、`flex: none` 防被文字压成椭圆、`aria-hidden`（语义已由文字承担）。**选绿不选红**：本应用红色是失败语义（左侧「X 个失败」用 `--danger`），红点会被读成「出错」而非「有新东西」。**规则体内禁用一切 `--primary-*` 与 `--radius-*`**（护栏 `views/Updater.guard.test.ts` 扫规则体）。元素仍是 `<button>`——它必须可点、可 Tab 聚焦、可 Enter/Space 触发，只是视觉上不长得像按钮。点击调 `updater.openConfirm()` 弹出更新确认框（§4.4）。**自动检查发现更新时不弹窗，只在这里亮提示**——不打扰用户当前操作。
+  - **无更新 → 只读 `<span class="version mono">`** 当前版本（`statusbar.version` = `v{version}`，版本取不到时 `update.versionUnknown`「版本未知」）：`color: var(--meta)`、`cursor: default`、无 hover、**不可点击**（必须用 `span` 不是 `button`，避免伪交互暗示）。
+  - 两个状态都钉在第 3 列（`grid-column: 3; justify-self: end`），总速度隐藏时不会被自动排到中列。
+- **原「默认下载目录」label 已移除**（2026-11-13）：下载目录是设置项，不必常驻状态栏；`FolderOpen` 图标、`configStore` 依赖与 `.dir-group` 样式一并删除。目录仍可在设置页 §4.2 第 1 项查看/更改。
+- **指针语义**：计数与总速度仍是纯展示（默认光标）；右列**唯一可控件是本态下的「圆点 + 发现新版本」提示**（`<button>` 但常态透明无底、hover 才铺灰底、不像按钮），无更新时是纯文本。原「FolderOpen 打开下载目录」按钮早已移除（opener 受 ACL 路径作用域限制无法授权，可点的按钮必然失败，比不可点的图标更误导）；打开目录能力保留在任务行操作组（后端 `open_file_location` 命令）。
 
 ### 2.5 交互与键盘路径
 
@@ -460,7 +464,13 @@ Plus 16（主按钮）· X 16（关闭）· Loader2 16（解析中/提交中）�
 **组「更新」**（2026-11 第十轮新增，§4.4）：
 8. **检查更新**：label"检查更新"；helper 一行显示**当前版本 + 上次检查状态**（`{version} · {status}`）——版本号来自 Tauri `getVersion()`（不硬编码，取不到显示"版本未知"），时间用既有 `formatCompletedAt`（"今天 14:32" / "MM-DD HH:mm"）；未检查显示"尚未检查更新"，失败显示"上次检查失败（{time}）"。右侧 Secondary 按钮"检查更新"（RefreshCw 16），checking 时 Loading、installing 时 disabled。**手动检查失败给可见 error toast**（"检查更新失败：{原因}"），与启动自动检查的完全静默策略区分；已是最新给 info toast"已是最新版本"。
 
-**主题**：无手动切换项——跟随系统为锁定行为（Spec §8），页脚说明文字"外观跟随 Windows 系统设置（深色/浅色）"（12px `--meta`）。
+**主题（三态，2026-11-13 用户裁决「主题三个选项」）**：设置页「通用」组新增一行「外观」，三选一分段控件——**跟随系统 / 浅色 / 深色**，选中即 `configStore.patch({ theme })` 即时生效。
+- 配置字段 `theme: 'system' | 'light' | 'dark'`（Rust 侧小写字符串序列化，默认 `'system'`）；前端 `UiConfig.theme` 缺省/非法值一律回落 `'system'`。
+- 控件形态复用 §2.2 的 `.seg` / `.seg-item`（容器 `--surface-2` + 2px padding、项 `--radius-sm`、激活底 `--surface`（深色 `--surface-3`）+ 1px `--border`），方角紧凑；三个 `button` + `aria-pressed` 保证键盘可达与读屏语义，**不新造组件、不引第三方库**。
+- 解析规则（单一实现 `api/theme.ts → resolveTheme`）：`light`/`dark` 是**绝对偏好**，无视系统；只有 `system` 才订阅 `prefers-color-scheme`。**绝对偏好绝不注册系统监听**——否则用户固定的浅色会被系统深色事件冲掉（§9 第 25 条的失败模式）。
+- 持久化与防闪屏：`localStorage` 镜像键 `wtf.theme`；`main.ts` 在 config 取回前先用镜像同步上色（固定深色用户开机不闪浅色），`stores/config.ts` 的 `load()` / `patch({theme})` 成功后写镜像并重应用。
+- 监听生命周期收口在 `api/theme.ts → activateTheme()`（模块级单例 `activeStop`）：切换偏好时**先停旧监听再装新的**，调用方不可能忘记释放，也不会累积两条。
+- `design-tokens.css` 的 `:root[data-theme="dark"]` 显式块 + 媒体查询兜底双通道**零改动**；原页脚说明文字「外观跟随 Windows 系统设置」已删除（`settings.themeNote` 键一并移除）。
 
 **Toggle 规格**：track 36×20px `--radius-full`，off = bg `--surface-3` + 1px `--border`，on = bg `--primary-bg`；knob 16px 圆、off 时 `--surface`（带 1px `--border`）、on 时 `--primary-fg`；切换动画 150ms `--ease-standard`；hit 区 ≥ 44×28px（外扩）；键盘 Space 切换，focus-visible 环；aria-role switch。
 
@@ -477,16 +487,17 @@ Settings 20（顶栏激活态）· FolderOpen 16（目录行：选择目录 / �
 
 ### 4.4 软件更新检查（2026-11 第十轮新增）
 
-更新源为 GitHub Releases 静态 `latest.json`（**后端 / `tauri.conf.json` / capability 归后端同事**，本轮前端不动）。前端只经 `src/api/updater.ts` 调插件 JS API（`check` / `downloadAndInstall` / `relaunch` / `getVersion`），**不新增任何自定义 IPC 命令**、不经 `api/invoke.ts`，`check_contract.sh` 的 19 条命令契约不变。分层护栏见 `architecture.guard.test.ts` 的 P0 分层 describe（updater / process / dialog 插件包同样只允许 `api/` 直连）。
+更新源为 GitHub Releases 静态 `latest.json`（**后端 / `tauri.conf.json` / capability 归后端同事**，本轮前端不动）。前端只经 `src/api/updater.ts` 调插件 JS API（`check` / `downloadAndInstall` / `getVersion` —— **不含 `relaunch`**），**不新增任何自定义 IPC 命令**、不经 `api/invoke.ts`，`check_contract.sh` 的 **18** 条命令契约不变（`clear_stats` 于 2026-11-10 删除，当前基线 18/18/18；§9 第 14/15 条与 §10 第 19 行写的「19 条」是当时口径，属历史记录不回改）。分层护栏见 `architecture.guard.test.ts` 的 P0 分层 describe（updater / dialog / clipboard-manager 插件包同样只允许 `api/` 直连；**process 包已按裁决撤销，不在名单内**）。
 
 **两条检查路径（都要）**：
 | 路径 | 触发 | 失败反馈 | 成功无更新 | 发现新版本 |
 |---|---|---|---|---|
-| 启动自动检查 | `App.vue` onMounted 后延迟 **3s**（不拖慢冷启动），卸载时 clearTimeout | **完全静默**：无 toast、无 console、不外抛；只在设置页留下「上次检查失败」状态 | 零打扰，不弹 toast | 弹更新确认框 |
-| 设置页手动检查 | 「检查更新」按钮 | **可见 error toast**（"检查更新失败：{原因}"） | info toast"已是最新版本" | 弹更新确认框 |
+| 启动自动检查 | `App.vue` onMounted 后延迟 **3s**（不拖慢冷启动），卸载时 clearTimeout | **完全静默**：无 toast、无 console、不外抛；只在设置页留下「上次检查失败」状态 | 零打扰，不弹 toast | **只亮状态栏「发现新版本」按钮，不弹窗**（§2.4，用户裁决：不打扰当前操作） |
+| 设置页手动检查 | 「检查更新」按钮 | **可见 error toast**（"检查更新失败：{原因}"） | info toast"已是最新版本" | 直接弹更新确认框（用户主动点的，弹窗是预期） |
+| 状态栏按钮 | 「发现新版本」按钮（仅 `available != null` 时出现） | — | — | 弹更新确认框（`openConfirm()` 是打开弹窗的唯一入口） |
 | 共同 | `checkUpdate(mode)` 单实现，幂等守卫（checking / installing / confirmOpen 时不重复发请求）；`lastCheckedAt` / `lastCheckFailed` 落 store 供设置页显示 | | | `available` 元数据 + `confirmOpen` |
 
-**更新确认框与退出提示（硬要求）**：复用 `ConfirmDialog.vue`，两按钮「稍后」（ghost，safe = Enter 默认最安全项）/「立即更新」（primary）。文案必须**在下载前**明示：「发现新版本 {version}。安装更新时应用会自动退出，安装完成后请重新打开；进行中的下载任务会自动恢复。」——Tauri v2 官方说明 Windows 安装步骤执行时应用自动退出，故**本项目不提供任何重启能力**（不引入 process 插件、`relaunch()` 不可达）。有 `body` 时追附"更新说明：{body}"。选「稍后」→ `discardPendingUpdate()` 释放 Rust 侧 Update 资源。
+**更新确认框与退出提示（硬要求）**：复用 `ConfirmDialog.vue`，两按钮「稍后」（ghost，safe = Enter 默认最安全项）/「立即更新」（primary）。正文**点明版本跨度**：「当前版本 {from}，新版本 {to}；是否立即更新？」（2026-11-13 用户裁决：「弹窗文本要提示从哪个版本升级到哪个版本」）——`from` 取 `updater.currentVersion`（取不到时「版本未知」），`to` 取 `updater.available.version`；标题仍为 `update.availableTitle`（"发现新版本 {version}"）。**不在入口堆更新说明与后果**。「安装更新时应用会自动退出、完成后请重新打开」这句**下沉到进度框**（`update.installing` / `update.installingFinished`）：用户按下「立即更新」之后才需要知道这件事，放在确认框只是噪音。`body`（更新说明）不再渲染，`update.releaseNotes` / `update.confirmWithNotes` 两个键已删。Tauri v2 官方说明 Windows 安装步骤执行时应用自动退出，故**本项目不提供任何重启能力**（不引入 process 插件、`relaunch()` 不可达）。选「稍后」→ `closeConfirm()` **只关弹窗、不销毁 pending**（`available` 保留、`hasPendingUpdate()` 仍为 true），状态栏按钮可再次点开直接安装；旧 `Update` 资源由下一次 `checkForUpdate()` 开头的 `discardPendingUpdate()` 释放。
 
 **确认后流程**：`confirmInstall()` 是唯一允许下载/安装的入口（`checkUpdate()` 绝不下载）；`installing` 时展示 `ModalShell`（`closeable=false`，不可误关）内的 `ProgressBar` + `formatBytes` 进度文本；`Started` 取 `contentLength` 作 total、`Progress` 累加 `chunkLength`、`Finished` 收尾，归一成 `{ downloaded, total }`。进度到 100% 显示「安装已开始，应用即将退出；完成后请重新打开」；安装器接管后应用自动退出，`installing` 保持 true 让进度框留到进程退出，**不调用任何重启 API**。安装失败给可见 error toast 并回到可重试状态。
 
@@ -616,10 +627,12 @@ Settings 20（顶栏激活态）· FolderOpen 16（目录行：选择目录 / �
 | 设置页更新行 | 组标题"更新"；label/按钮"检查更新"；helper"{版本} · {状态}"（当前版本 {version} / 版本未知 · 尚未检查更新 · 上次检查 {time} · 上次检查失败（{time}）） |
 | 已是最新 | Toast（仅手动检查）：已是最新版本 |
 | 手动检查失败 | Toast：检查更新失败：{原因}（自动检查失败**无文案、完全静默**） |
-| 更新确认框 | 标题"发现新版本 {version}"；正文"发现新版本 {version}。安装更新时应用会自动退出，安装完成后请重新打开；进行中的下载任务会自动恢复。"（有 body 时追加"更新说明：{body}"）；按钮"稍后" / "立即更新" |
+| 更新确认框 | 标题"发现新版本 {version}"；正文"当前版本 {from}，新版本 {to}；是否立即更新？"；按钮"稍后" / "立即更新" |
+| 状态栏更新提示 | 有更新："发现新版本"（方形中性 label 块，`--surface-3` 底无圆角，可点）；无更新："v{version}"（只读 label，取不到版本时"版本未知"） |
+| 设置页外观 | label"外观"；三选项"跟随系统" / "浅色" / "深色" |
 | 下载安装 | 标题"正在安装更新"；"正在下载并安装更新，应用将在安装阶段自动退出"；进度"已下载 {downloaded} / {total}"（无总长时"已下载 {downloaded}"）；到 100% 显示"安装已开始，应用即将退出；完成后请重新打开"；失败 Toast"更新安装失败：{原因}" |
 
-> 「安装更新时应用会自动退出，安装完成后请重新打开」是**下载前必须明示**的硬文案（Windows 安装器会使应用自动退出、`relaunch()` 不可达），不得省略或改成静默安装，也不得写成「自动重启」。
+> 「安装更新时应用会自动退出，安装完成后请重新打开」这条**不得省略、不得改成静默安装、不得写成「自动重启」**，但它的位置是**进度框**（用户按下「立即更新」之后），不是确认框。确认框只留一句「是否立即更新？」。判据：用户在做决定的那一刻只需要知道"有没有新版本、要不要现在更新"，不需要读后果；后果在他按下之后立刻出现在进度框里。
 
 ### 6.5 数字与单位格式（十进制，1 MB = 1000 KB）
 
@@ -691,6 +704,8 @@ Settings 20（顶栏激活态）· FolderOpen 16（目录行：选择目录 / �
 14. **第十轮：更新机制前端侧（2026-11-07，与后端同事并行，文件互不重叠）**：新增依赖**仅** `@tauri-apps/plugin-updater`（`@tauri-apps/plugin-process` 经项目总监裁决撤销，见第 15 条）；新建 `api/updater.ts`（**唯一**直连插件的一层，`checkForUpdate` / `installUpdate` 进度归一 / `getVersion`，不新增自定义 IPC 命令、**不提供任何重启函数**）、`stores/updater.ts`（两条检查路径共用状态）、`components/UpdateDialogs.vue`（确认框 + 进度框）、`components/settings/UpdateSettingsRow.vue`（版本 / 上次检查 / 按钮）。启动 3s 延迟自动检查**失败完全静默但留失败态**，设置页手动检查**失败可见 toast**；发现新版本用 `ConfirmDialog` 两按钮确认，**下载前必须明示「安装更新时应用自动退出，完成后请重新打开」**；`confirmInstall()` 是唯一允许下载的入口（确认前不下载）。全部文案进 `zh-CN.ts` 的 `update.*`；`App.vue` 与 `SettingsView.vue` 只加接线，逻辑不塞进已 299 行的 `TaskListView.vue`。**后端 / Rust / `tauri.conf.json` / capability / SPEC / README 归后端同事，本轮零改动**；`check_contract.sh` 仍 19/19/19。
 15. **第十轮裁决：撤销全部重启类依赖**（2026-11-08 执行）：后端曾为配套 `relaunch()` 额外新增第 4 个 Rust 依赖 `tauri-plugin-process`，超出用户授权的 3 个包；且 Tauri v2 官方明确「Windows 安装步骤执行时应用自动退出」「安装后立即重启非必需」，`downloadAndInstall()` 之后的 `relaunch()` 不可达。裁决整体撤销：`Cargo.toml` / `lib.rs` / capability 三处删除、`ui/package.json` 卸载 `@tauri-apps/plugin-process`、`api/updater.ts` 删除 `relaunchApp()`、`stores/updater.ts` 安装成功后不调任何重启 API（`installing` 保持 true 让进度框留到进程退出）。文案统一为「安装时应用自动退出，完成后请重新打开」，`update.relaunching` 死键删除。护栏：`api/updater.test.ts` 断言不导出 relaunch、`stores/updater.test.ts` 断言 store 源码不含 `relaunch`、`architecture.guard.test.ts` 的 `PLUGIN_NEEDLES` 移除 process 包。**零后端契约变化，19/19/19 不变**。
 
+16. **第十一轮两项裁决（2026-11-13）**：① **状态栏「发现新版本」由按钮皮肤改为方形中性 label 块**——用户原话「不要用按钮，按钮感觉太重了，就是一个方形不带圆角的 label 块，配色也不要按钮主色，太突兀了」。元素仍是 `<button>`（要可点、可 Tab 聚焦），但视觉改为 `border-radius: 0` + `--surface-3` 底 + `--fg` 字 + 高 20px，hover `--surface-2`，规则体内禁用一切 `--primary-*` / `--radius-*`（§2.4）。② **主题由「硬编码跟随系统」改为三态用户偏好**——用户原话「主题三个选项」。配置字段 `theme: 'system' | 'light' | 'dark'`（默认 `system`），设置页「通用」组加「外观」三选一分段控件（§4.2）；`light`/`dark` 是绝对偏好、**不订阅** `prefers-color-scheme`（订阅会让固定浅色被系统深色冲掉），监听生命周期收口在 `api/theme.ts → activateTheme()` 模块级单例，切换时先停旧再装新；`localStorage` 镜像 `wtf.theme` 让 config 取回前先上色，避免固定深色用户开机闪浅色。design token 与 `design-tokens.css` **零改动**；后端 `crates/**` / `tauri.conf.json` 归后端同事，本轮零改动。
+
 ### 9.1 静态源码护栏与变异验证（工程守则，2026-11 定）
 
 本项目有大量护栏是**静态源码断言**（读 `.vue`/`.ts` 源码做正则/切片断言，如 `TaskListView.test.ts`、`TaskActions.test.ts`），因为相关缺陷（未处理 Promise、柯里化 handler、裸拼路径、双前缀文案）在纯行为单测里难以复现。这类护栏必须按下述规则维护：
@@ -752,3 +767,6 @@ Settings 20（顶栏激活态）· FolderOpen 16（目录行：选择目录 / �
 | 19 | **第十轮新增软件更新检查（前端侧）**：启动 3s 延迟自动检查（失败完全静默、只留失败态）+ 设置页手动检查（失败可见 toast）；新增「更新」分组显示当前版本与上次检查时间；发现新版本用 `ConfirmDialog` 两按钮确认，下载前明示「安装更新时应用自动退出，完成后请重新打开」；确认后展示进度，安装器接管后应用自动退出、不调用任何重启 API | 用户已拍板「更新源 GitHub Releases 静态 latest.json、启动自动检查 + 设置页手动检查两者都要、设置页显示当前版本号与上次检查时间、首版不代码签名」。Windows 安装器执行时应用自动退出，会打断进行中的下载，故必须先确认并如实告知。前端只经插件 JS API（`check` / `downloadAndInstall` / `getVersion`），**不新增自定义 IPC 命令**，19 条命令契约不变；分层铁律由 `architecture.guard.test.ts` 扩展护栏守死。后端 / `tauri.conf.json` / capability / SPEC / README / docs/UPDATES.md 归后端同事，本轮零改动（§4.4 / §6.4.1 / §9 第 14 条） |
 | 20 | **第十轮裁决：不引入重启类插件**（取代上一条中「确认后再 relaunch」的旧口径）：撤销 `tauri-plugin-process`（Rust）与 `@tauri-apps/plugin-process`（npm）、`relaunchApp()` 及全部相关 capability 权限 | 用户只授权 3 个依赖，第 4 个 Rust crate 属越界；且 Tauri v2 官方明确 Windows 安装阶段应用自动退出、`relaunch()` 不可达，该依赖无实际收益。安装成功后 `installing` 保持 true、进度框留到进程退出，由用户手动重新打开。文案与护栏同步收紧（§9 第 15 条） |
 | 21 | **品牌图标 + 安装程序简体中文**（2026-11-09）：`bundle.icon` 四件套改引用 `wtf-downloader-32/128/256.png` + `wtf-downloader.ico`；ICO 由 1024 母版重生成六层；新增 `bundle.windows.nsis.languages: ["SimpChinese"]` 与 `installerIcon` | 用户截图：NSIS 向导全英文、exe 与标题栏仍是 Tauri 默认图标；用户已把 `wtf-downloader-*` 全套图标放进 `crates/app/icons/`。原 ICO 只有 256 单层，不符合官方 16/24/32/48/64/256 要求，故用母版重生成。欢迎页侧栏图需 164×314 BMP，用户未提供，保持 NSIS 默认并列为可选项（docs/UPDATES.md §8.1 / §9） |
+| 22 | **更新确认框去掉啰嗦文案**（2026-11-13）：`update.confirmMessage` 由「发现新版本 {version}。安装更新时应用会自动退出，安装完成后请重新打开；进行中的下载任务会自动恢复。」改为「**是否立即更新？**」；删除 `update.releaseNotes` / `update.confirmWithNotes` 两个键与 `UpdateDialogs.vue` 的 notes 拼接；「会退出应用」下沉到进度框（`update.installing` / `installingFinished` 原文保留） | 用户原话「有版本更新时的提示语太啰嗦了，就简单点提示有新版本，是否立即更新就行了，改完先不发布」。原确认框把版本号、退出行为、任务恢复、更新说明四件事挤在一屏，而用户此刻要做的只是一个二选一决定 | 护栏 `views/Updater.guard.test.ts` 改为断言「一句话正文 + 退出提示只在进度框 + 两个死键不得回潮」（§4.4 / §6.4.1 / 文案表） |
+| 23 | **更新提示改为状态栏按钮 + 设置页更新组置顶**（2026-11-13）：① 自动检查发现更新**不再弹窗**，只在主窗体右下角状态栏亮「发现新版本」主色按钮，点击才经 `openConfirm()` 弹更新确认框；无更新时状态栏显示只读当前版本 label（`v{version}`，`span` 不可点）；② 状态栏原「默认下载目录」label 整体移除（含 `FolderOpen` / `configStore` / `.dir-group`）；③ 确认框正文改为点明版本跨度「当前版本 {from}，新版本 {to}；是否立即更新？」；④ 设置页「更新」分组移到「下载」之前成第一组；⑤ 「稍后」由 `dismissConfirm()`（销毁 pending）改为 `closeConfirm()`（只关弹窗），状态栏按钮可再次点开直接安装 | 用户原话「自动检查到更新后不打扰用户操作，只在主窗体右下角给一个明显的【发现新版本】按钮，点击后弹出更新弹窗；弹窗文本要提示从哪个版本升级到哪个版本；没有新版本时这里显示当前版本号的 label，不能点击；右下角原本的全局下载目录 label（C://Users//wei_t//Downloads）去掉；设置里检查更新的设置组放到最前面」 | 自动检查的**打扰边界**从「弹窗」降为「状态栏按钮」：用户决策时机由程序决定改为用户自己决定。`closeConfirm` 不销毁 pending 是可用性硬条件——销毁后 `hasPendingUpdate()` 变 false，`confirmInstall()` 会直接 return，按钮就成了死键；旧 `Update` 资源仍由下一次 `checkForUpdate()` 开头的 `discardPendingUpdate()` 释放，无泄漏。护栏 `views/Updater.guard.test.ts` 新增「auto 分支不得打开弹窗 / openConfirm 唯一入口 / closeConfirm 不清 pending / 状态栏无 downloadDir `/ 状态栏两态」断言（§2.4 / §4.4 / §6.4.1） |
+| 24 | **状态栏更新提示改方形中性 label 块 + 主题三态选择**（2026-11-13）：① `.update-cta` 由主色实底按钮改为 `border-radius: 0` / `--surface-3` 底 / `--fg` 字 / 高 20px / hover `--surface-2`，仍保留 `<button>` 元素；② 新增配置字段 `theme: 'system'\|'light'\|'dark'`（默认 system）与设置页「外观」三选一分段控件，主题三态即时生效；③ `api/theme.ts` 新增 `ThemePreference` / `resolveTheme` / `applyThemePreference` / `activateTheme`（模块级单例停旧装新），`main.ts` 用 localStorage 镜像 `wtf.theme` 先上色，config store 在 load/patch 后重应用；④ 删除 `settings.themeNote` 与页脚说明文字 | 用户原话「不要用按钮，按钮感觉太重了，就是一个方形不带圆角的 label 块，配色也不要按钮主色，太突兀了」+「主题三个选项」。原状态栏 CTA 是白底大圆角 + 主色，确实像按钮；原主题是 `main.ts` 硬编码 `watchSystemTheme()`，用户无法固定浅色/深色 | ①「像按钮」的根因是**圆角 + 强调色**两件套，去掉这两样即回归标签语义，但 click/Tab/Enter 能力必须保留，故不改成 span。②三态的关键失败模式是**偏好切换时旧监听残留**：若 `light` 也注册了 `prefers-color-scheme` 监听，系统切深色会把用户固定值冲掉，故绝对偏好一律不订阅，且停止函数收口到模块级单例（`activeStop?.()` 先停再装），调用方无法遗漏。③防闪屏靠 localStorage 镜像同步首装，config 异步返回后再以真实值覆盖。护栏：`api/theme.test.ts`（六格矩阵 / 固定偏好不注册监听 / 切换后旧监听已移除）+ `views/Updater.guard.test.ts` 的 CTA 规则体与三项 key 断言。**后端 Rust / `tauri.conf.json` / `Cargo.*` 零改动** |

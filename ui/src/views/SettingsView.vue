@@ -36,6 +36,16 @@ const limitText = ref('');
 
 const config = computed(() => configStore.config);
 
+/**
+ * 主题三选项（DESIGN.md §4.2）：值是配置契约里的小写字符串，label 走 locales。
+ * 顺序固定为「跟随系统 → 浅色 → 深色」，默认项在最左。
+ */
+const themeOptions = computed(() => [
+  { value: 'system' as const, label: t('settings.themeSystem') },
+  { value: 'light' as const, label: t('settings.themeLight') },
+  { value: 'dark' as const, label: t('settings.themeDark') },
+]);
+
 onMounted(async () => {
   if (configStore.config == null) await configStore.load();
   syncInputs();
@@ -105,6 +115,13 @@ async function commitLimit(): Promise<void> {
         </p>
         <template v-else>
           <section class="group">
+            <h3 class="group-title">{{ t('settings.groupUpdate') }}</h3>
+            <div class="group-box">
+              <UpdateSettingsRow />
+            </div>
+          </section>
+
+          <section class="group">
             <h3 class="group-title">{{ t('settings.groupDownload') }}</h3>
             <div class="group-box">
               <SettingsRow :label="t('settings.downloadDir')">
@@ -168,17 +185,26 @@ async function commitLimit(): Promise<void> {
                   @update:model-value="(v) => configStore.patch({ notifyOnComplete: v })"
                 />
               </SettingsRow>
+              <SettingsRow :label="t('settings.theme')">
+                <!-- 三选一：跟随系统 / 浅色 / 深色（2026-11-13 用户裁决）。
+                     形态沿用 FilterTabs 的 .seg/.seg-item（方角紧凑），不新造组件。
+                     三个 button + aria-pressed 保证键盘可达与读屏语义。 -->
+                <div class="seg" role="group" :aria-label="t('settings.theme')">
+                  <button
+                    v-for="opt in themeOptions"
+                    :key="opt.value"
+                    type="button"
+                    class="seg-item"
+                    :class="{ active: config.theme === opt.value }"
+                    :aria-pressed="config.theme === opt.value"
+                    @click="configStore.patch({ theme: opt.value })"
+                  >
+                    {{ opt.label }}
+                  </button>
+                </div>
+              </SettingsRow>
             </div>
           </section>
-
-          <section class="group">
-            <h3 class="group-title">{{ t('settings.groupUpdate') }}</h3>
-            <div class="group-box">
-              <UpdateSettingsRow />
-            </div>
-          </section>
-
-          <p class="theme-note">{{ t('settings.themeNote') }}</p>
         </template>
       </div>
     </main>
@@ -255,8 +281,49 @@ async function commitLimit(): Promise<void> {
   color: var(--muted);
 }
 
-.theme-note {
+/* 主题三选一分段控件：形态与 FilterTabs .seg 一致（方角紧凑、激活底 --surface） */
+.seg {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+  padding: 2px;
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+}
+
+.seg-item {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   font-size: var(--text-xs);
-  color: var(--meta);
+  font-weight: 400;
+  color: var(--muted);
+  white-space: nowrap;
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard);
+}
+
+.seg-item:hover {
+  color: var(--fg-2);
+}
+
+.seg-item.active {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--fg);
+  font-weight: 500;
+}
+
+/* 深色主题激活项底色（与 FilterTabs 同口径） */
+:global(html[data-theme='dark']) .seg-item.active {
+  background: var(--surface-3);
+}
+
+.seg-item:focus-visible {
+  box-shadow: var(--focus-ring);
 }
 </style>

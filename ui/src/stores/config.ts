@@ -7,6 +7,7 @@ import {
   type ConfigPatch,
 } from '@/api/config';
 import { errMessage } from '@/api/invoke';
+import { activateTheme, writeThemePreference, type ThemePreference } from '@/api/theme';
 import { useToastStore } from './toast';
 
 /** Config 契约 + DESIGN.md §4.2 的托盘开关键（后端补字段前由前端持有，见 api/config.ts） */
@@ -17,6 +18,12 @@ export interface UiConfig {
   notifyOnComplete: boolean;
   autostartEnabled: boolean;
   minimizeToTray: boolean;
+  /** 主题三态偏好（契约字段 `theme`，Rust 侧小写字符串；缺省 system） */
+  theme: ThemePreference;
+}
+
+function toThemePreference(raw: unknown): ThemePreference {
+  return raw === 'light' || raw === 'dark' || raw === 'system' ? raw : 'system';
 }
 
 function toUiConfig(raw: {
@@ -31,6 +38,8 @@ function toUiConfig(raw: {
     ...raw,
     minimizeToTray:
       typeof extra.minimizeToTray === 'boolean' ? extra.minimizeToTray : true,
+    // 后端字段落地前缺省 system；非法值一律回落，避免把 data-theme 写成 undefined
+    theme: toThemePreference((extra as { theme?: unknown }).theme),
   };
 }
 
@@ -45,6 +54,9 @@ export const useConfigStore = defineStore('config', {
       try {
         this.config = toUiConfig(await getConfig());
         this.loadError = '';
+        // 拿到真实偏好后重应用（activateTheme 内部先停掉 main.ts 首装的那条监听）
+        writeThemePreference(this.config.theme);
+        activateTheme(this.config.theme);
       } catch (e) {
         this.loadError = errMessage(e);
       }
@@ -55,6 +67,11 @@ export const useConfigStore = defineStore('config', {
       const toast = useToastStore();
       try {
         this.config = toUiConfig(await setConfig(patch));
+        if (patch.theme != null) {
+          // 主题是即时可见的：先写镜像再重应用，失败路径不落地（config 已是旧值）
+          writeThemePreference(this.config.theme);
+          activateTheme(this.config.theme);
+        }
         toast.push('success', 'toast.saved', { dedupeKey: 'saved', windowMs: 2000 });
         return true;
       } catch (e) {

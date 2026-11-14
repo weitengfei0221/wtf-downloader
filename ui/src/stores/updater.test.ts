@@ -47,14 +47,15 @@ describe('启动自动检查：失败完全静默，但状态留在设置页', (
     expect(store.available).toBeNull();
   });
 
-  it('自动检查发现新版本只开确认框，绝不下载（等用户确认）', async () => {
+  it('自动检查发现新版本只亮状态栏按钮，不弹窗、绝不下载', async () => {
     mocks.checkForUpdate.mockResolvedValue(INFO);
     const store = useUpdaterStore();
 
     await store.autoCheck();
 
-    expect(store.confirmOpen).toBe(true);
+    // 用户裁决 2026-11-13：自动检查不打扰操作 → 只写 available，confirmOpen 保持 false
     expect(store.available).toEqual(INFO);
+    expect(store.confirmOpen).toBe(false);
     expect(mocks.installUpdate).not.toHaveBeenCalled();
     expect(store.installing).toBe(false);
   });
@@ -100,18 +101,44 @@ describe('设置页手动检查：失败必须可见，与自动静默区分', (
 });
 
 describe('确认前不下载 / 确认后才安装（安装阶段自动退出）', () => {
-  it('confirmInstall 前不下载；选「稍后」释放 handle 且不下载', async () => {
+  it('手动检查发现更新直接开确认框（用户主动点按钮，弹窗是预期）', async () => {
     mocks.checkForUpdate.mockResolvedValue(INFO);
     const store = useUpdaterStore();
+
     await store.manualCheck();
+
+    expect(store.available).toEqual(INFO);
+    expect(store.confirmOpen).toBe(true);
+    expect(mocks.installUpdate).not.toHaveBeenCalled();
+  });
+
+  it('选「稍后」只关确认框：available 保留、pending 不销毁，可再次点开', async () => {
+    mocks.checkForUpdate.mockResolvedValue(INFO);
+    const store = useUpdaterStore();
+    await store.autoCheck();
+    store.openConfirm();
+    expect(store.confirmOpen).toBe(true);
+
+    store.closeConfirm();
+
+    expect(store.confirmOpen).toBe(false);
+    // 关键：不销毁 pending —— 否则状态栏按钮再点开时 confirmInstall() 会直接 return
+    expect(store.available).toEqual(INFO);
+    expect(mocks.discardPendingUpdate).not.toHaveBeenCalled();
+    expect(mocks.hasPendingUpdate()).toBe(true);
     expect(mocks.installUpdate).not.toHaveBeenCalled();
 
-    await store.dismissConfirm();
+    // 「稍后」之后仍可从状态栏再点开并真装
+    store.openConfirm();
+    expect(store.confirmOpen).toBe(true);
+    await store.confirmInstall();
+    expect(mocks.installUpdate).toHaveBeenCalledOnce();
+  });
+
+  it('openConfirm 在没有可用更新时是空操作（不弹空弹窗）', () => {
+    const store = useUpdaterStore();
+    store.openConfirm();
     expect(store.confirmOpen).toBe(false);
-    expect(store.available).toBeNull();
-    expect(mocks.discardPendingUpdate).toHaveBeenCalledOnce();
-    expect(mocks.installUpdate).not.toHaveBeenCalled();
-    expect(store.installing).toBe(false);
   });
 
   it('点「立即更新」→ 下载安装 → 保持退出提示态，进度写入 store', async () => {

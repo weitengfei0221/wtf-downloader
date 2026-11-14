@@ -50,6 +50,8 @@ export interface Config {
   globalSpeedLimitBps: number | null;
   notifyOnComplete: boolean;
   autostartEnabled: boolean; // OS 实时状态，非 DB 字段
+  /** 主题三态偏好（契约已锁定，Rust 侧小写序列化）。后端字段落地前缺省 = 'system' */
+  theme?: 'system' | 'light' | 'dark';
 }
 
 export interface AppErrorShape {

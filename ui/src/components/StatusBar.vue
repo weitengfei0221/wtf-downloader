@@ -1,30 +1,36 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ArrowDown, FolderOpen } from '@lucide/vue';
+import { ArrowDown } from '@lucide/vue';
 import { t } from '@/locales/zh-CN';
 import { useTasksStore } from '@/stores/tasks';
-import { useConfigStore } from '@/stores/config';
+import { useUpdaterStore } from '@/stores/updater';
 import { formatSpeed } from '@/utils/format';
 
 /**
  * 状态栏（DESIGN.md §2.4，32px）：三段网格 —— 左 = 任务计数摘要（数字 mono
- * tabular-nums）· 中 = 全部任务总实时速度（只读）· 右 = 默认下载目录（纯展示）。
+ * tabular-nums）· 中 = 全部任务总实时速度（只读）· 右 = 更新状态（两态）。
  *
  * 2026-11 交互减法：
  * - 总速度从顶栏 chip 下移至此：速度是状态信息，不是操作入口。纯文本、无 hover
  *   背景、`cursor: default`、不可点击；速度为 0（无下载中任务）时整段隐藏，
  *   避免长期常驻 "0 B/s" 噪音。全局限速只在设置页设置。
- * - 下载目录同理纯展示：FolderOpen 仅作图标语义（aria-hidden），无 click/
- *   hover/title。opener 受 ACL 路径作用域限制无法授权，可点的按钮必然失败，
- *   故直接不给伪交互暗示。
+ * - 右侧原「默认下载目录」label 已移除（用户裁决 2026-11-13）：目录是设置项，不必
+ *   常驻状态栏。改为更新状态两态——有可用更新时是**「小圆点 + 文字」**（常态透明无底、
+ *   hover 才铺 `--surface-2`、方形无圆角、可点；自动检查到后在这里提示，不弹窗打扰）；
+ *   无更新时是纯展示的当前版本 label（span，无 hover、不可点击）。
  */
 const tasksStore = useTasksStore();
-const configStore = useConfigStore();
+const updater = useUpdaterStore();
 
 const counts = computed(() => tasksStore.counts);
-const dir = computed(() => configStore.config?.downloadDir ?? '');
 const totalSpeed = computed(() => tasksStore.totalSpeedBps);
 const speedText = computed(() => formatSpeed(totalSpeed.value));
+const hasUpdate = computed(() => updater.available != null);
+const versionText = computed(() =>
+  updater.currentVersion !== ''
+    ? t('statusbar.version', { version: updater.currentVersion })
+    : t('update.versionUnknown'),
+);
 </script>
 
 <template>
@@ -45,10 +51,17 @@ const speedText = computed(() => formatSpeed(totalSpeed.value));
       <span class="speed-value mono">{{ speedText }}</span>
     </div>
 
-    <div v-if="dir !== ''" class="dir-group">
-      <FolderOpen class="icon-16 dir-icon" aria-hidden="true" />
-      <span class="dir mono">{{ dir }}</span>
-    </div>
+    <!-- 第 3 列两态：有更新 = 可点圆点+文字；无更新 = 只读版本 label（不是 button，避免伪交互） -->
+    <button
+      v-if="hasUpdate"
+      class="update-cta"
+      type="button"
+      @click="updater.openConfirm()"
+    >
+      <span class="cta-dot" aria-hidden="true" />
+      {{ t('statusbar.updateAvailable') }}
+    </button>
+    <span v-else class="version mono">{{ versionText }}</span>
   </footer>
 </template>
 
@@ -97,29 +110,62 @@ const speedText = computed(() => formatSpeed(totalSpeed.value));
   color: var(--muted);
 }
 
-/* 目录行：展示信息，非控件（默认光标、无 hover 反馈） */
-/* 显式钉在第 3 列：总速度隐藏时（v-if / 窄窗）不会被自动排到中列 */
-.dir-group {
+/*
+ * 发现新版本：**形态是状态标签、不是按钮**（2026-11-13 用户裁决「不要用按钮，按钮感觉
+ * 太重了，就是一个方形不带圆角的 label 块，配色也不要按钮主色，太突兀了」）。
+ * 视觉：方形无圆角、中性 --surface-3 底 + --fg 字、高度贴齐 12px 文字行（20px）。
+ * 元素仍是 <button>：它必须可点、可 Tab 聚焦、可 Enter/Space 触发，只是不长得像按钮。
+ * 禁用 --primary-* 与 --radius-*（护栏 `views/Updater.guard.test.ts` 会扫本规则体）。
+ */
+.update-cta {
   grid-column: 3;
   justify-self: end;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-width: 0;
-  color: var(--meta);
-  cursor: default;
-}
-
-.dir {
-  min-width: 0;
-  max-width: 40ch;
-  overflow: hidden;
+  height: 20px;
+  padding: 0 var(--space-2);
+  border: none;
+  border-radius: 0;
+  /* 常态透明：只有圆点 + 文字，不铺底色（2026-11-13 用户裁决「正常显示时没有背景」） */
+  background: transparent;
+  color: var(--fg);
+  font-size: var(--text-xs);
+  font-weight: 500;
   white-space: nowrap;
-  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-standard);
+}
+
+.update-cta:hover {
+  background: var(--surface-2);
+}
+
+/* 小圆点：只表示「有新版本可用」。
+   用 --success 而非 --danger：本应用里红色是失败语义（左侧「X 个失败」），
+   红点会被读成「出错」而不是「有新东西」。 */
+.cta-dot {
+  width: 6px;
+  height: 6px;
+  flex: none; /* 不被文字挤压成椭圆 */
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.update-cta:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+/* 当前版本：只读 label（span，无 hover、不可点击） */
+.version {
+  grid-column: 3;
+  justify-self: end;
+  color: var(--meta);
+  white-space: nowrap;
   cursor: default;
 }
 
-/* 窄窗让位（DESIGN.md §8）：窗口最小 720px 时优先保证计数与目录可见 */
+/* 窄窗让位（DESIGN.md §8）：窗口最小 720px 时优先保证计数与更新状态可见 */
 @media (max-width: 860px) {
   .speed {
     display: none;

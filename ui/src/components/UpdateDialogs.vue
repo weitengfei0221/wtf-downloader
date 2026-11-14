@@ -11,21 +11,21 @@ import ProgressBar from '@/components/ProgressBar.vue';
  * 更新相关的两个全局模态（DESIGN.md §4.4）：发现新版本确认框 + 下载安装进度框。
  * 独立于 App.vue 成件，避免把弹窗标记塞进应用外壳。
  *
- * Windows 上安装器执行时应用会自动退出，所以 ConfirmDialog 的文案必须在**下载前**
- * 明示「安装时应用自动退出、完成后请重新打开」，不做任何重启调用（relaunch 不可达）。
+ * 文案分工：
+ *   - 确认框（用户 2026-11-13 裁决）：正文点明**从哪个版本升到哪个版本**，
+ *     「当前版本 {from}，新版本 {to}；是否立即更新？」——版本跨度是用户决策的关键信息；
+ *   - 进度框：这里才是「应用会自动退出、完成后请重新打开」该出现的地方——用户按了
+ *     立即更新之后才需要知道这件事，放在入口只是噪音。
+ *
+ * 弹窗由谁打开（同日裁决）：自动检查只写 available、**不弹窗**（状态栏按钮提示）；
+ * 手动检查与状态栏按钮都经 openConfirm() 进来。
  */
 const updater = useUpdaterStore();
 
-const message = computed(() => {
-  const info = updater.available;
-  if (info == null) return '';
-  const message = t('update.confirmMessage', { version: info.version });
-  if (!info.body) return message;
-  return t('update.confirmWithNotes', {
-    message,
-    notes: t('update.releaseNotes', { body: info.body }),
-  });
-});
+/** 当前版本取不到时用降级文案，绝不显示空串或硬编码版本号 */
+const fromVersion = computed(() =>
+  updater.currentVersion !== '' ? updater.currentVersion : t('update.versionUnknown'),
+);
 
 const percent = computed(() => {
   const p = updater.progress;
@@ -49,12 +49,14 @@ const progressText = computed(() => {
   <ConfirmDialog
     v-if="updater.confirmOpen && updater.available"
     :title="t('update.availableTitle', { version: updater.available.version })"
-    :message="message"
+    :message="
+      t('update.confirmMessage', { from: fromVersion, to: updater.available.version })
+    "
     :actions="[
       { key: 'later', label: t('update.later'), variant: 'ghost', safe: true },
       { key: 'install', label: t('update.installNow'), variant: 'primary' },
     ]"
-    @select="(key) => (key === 'install' ? void updater.confirmInstall() : void updater.dismissConfirm())"
+    @select="(key) => (key === 'install' ? void updater.confirmInstall() : updater.closeConfirm())"
   />
 
   <ModalShell v-if="updater.installing" :width="400" :closeable="false">

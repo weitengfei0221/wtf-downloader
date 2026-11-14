@@ -28,6 +28,9 @@ export const zhCN = {
   'filter.missingAria': '仅显示关联文件已丢失的已完成任务',
 
   'statusbar.totalSpeed': '全部任务总速度（只读）',
+  /** 状态栏右侧更新状态两态（用户裁决 2026-11-13：自动发现更新不弹窗，只在这里提示） */
+  'statusbar.updateAvailable': '发现新版本',
+  'statusbar.version': 'v{version}',
 
   'status.pending': '等待中',
   'status.paused': '已暂停',
@@ -135,7 +138,11 @@ export const zhCN = {
   'settings.closeToTrayHelper': '关闭后仍在后台下载，可从托盘图标重新打开',
   'settings.notify': '下载完成系统通知',
   'settings.notifyHelper': '每个任务完成时发送系统通知',
-  'settings.themeNote': '外观跟随 Windows 系统设置（深色/浅色）',
+  /** 主题三态（2026-11-13 用户裁决「主题三个选项」）；值是配置字段 theme 的小写字符串 */
+  'settings.theme': '外观',
+  'settings.themeSystem': '跟随系统',
+  'settings.themeLight': '浅色',
+  'settings.themeDark': '深色',
   'settings.unit': 'MB/s',
   'settings.groupUpdate': '更新',
 
@@ -148,13 +155,12 @@ export const zhCN = {
   'update.lastChecked': '上次检查 {time}',
   'update.lastCheckFailed': '上次检查失败（{time}）',
   'update.statusLine': '{version} · {status}',
-  'update.confirmWithNotes': '{message} {notes}',
   'update.upToDate': '已是最新版本',
   'update.checkFailed': '检查更新失败：{reason}',
   'update.installFailed': '更新安装失败：{reason}',
   'update.availableTitle': '发现新版本 {version}',
-  /** 下载前必须明示：Windows 安装阶段应用自动退出、完成后需手动重开（官方行为） */
-  'update.confirmMessage': '发现新版本 {version}。安装更新时应用会自动退出，安装完成后请重新打开；进行中的下载任务会自动恢复。',
+  /** 确认框点明版本跨度（from → to）；「会退出应用」在进度框里说（2026-11-13 用户裁决） */
+  'update.confirmMessage': '当前版本 {from}，新版本 {to}；是否立即更新？',
   'update.later': '稍后',
   'update.installNow': '立即更新',
   'update.installingTitle': '正在安装更新',
@@ -162,7 +168,6 @@ export const zhCN = {
   'update.installingFinished': '安装已开始，应用即将退出；完成后请重新打开',
   'update.progress': '已下载 {downloaded} / {total}',
   'update.progressUnknown': '已下载 {downloaded}',
-  'update.releaseNotes': '更新说明：{body}',
   'aria.checkUpdate': '检查更新',
 
   'toast.saved': '设置已保存',

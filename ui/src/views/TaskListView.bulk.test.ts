@@ -17,6 +17,9 @@ const code = (s: string): string =>
 
 const view = read('./TaskListView.vue');
 const viewCode = code(view);
+/** 删除流程已整段抽到 composable（2026-11-13 技术债清理），语义断言改盯这里 */
+const removeFlow = read('../composables/useRemoveFlow.ts');
+const removeFlowCode = code(removeFlow);
 const row = read('../components/task/TaskRow.vue');
 const rowCode = code(row);
 const selection = read('../composables/useTaskSelection.ts');
@@ -169,8 +172,8 @@ describe('可用性判据与删除语义：唯一实现，不在组件里重写�
   it('删除用 deleteFilesFromKey 单点映射，组件里不自写 with-files 判断', () => {
     expect(contextMenu).toContain('deleteFilesFromKey(key)');
     expect(contextCode).not.toContain("key === 'with-files'");
-    expect(view).toContain('deleteFilesFromKey(key)');
-    expect(viewCode).not.toContain("key === 'with-files'");
+    expect(removeFlow).toContain('deleteFilesFromKey(key)');
+    expect(removeFlowCode).not.toContain("key === 'with-files'");
     expect(bulk).toContain('export function deleteFilesFromKey(key: string): boolean');
   });
 
@@ -179,10 +182,10 @@ describe('可用性判据与删除语义：唯一实现，不在组件里重写�
       expect(contextMenu).toContain(`key: '${key}'`);
     }
     // 未完成任务删完记录就没了，磁盘上只剩 .part（后端一律清），没有可选的文件
-    expect(view).toContain("confirmTask.value?.status !== 'completed'");
-    expect(view).toContain("{ key: 'remove', label: t('remove.confirm')");
-    expect(view).toContain("{ key: 'with-files', label: t('remove.withFiles')");
-    expect(view).toContain('remove.messageCompleted');
+    expect(removeFlow).toContain("confirmTask.value?.status !== 'completed'");
+    expect(removeFlow).toContain("{ key: 'remove', label: t('remove.confirm')");
+    expect(removeFlow).toContain("{ key: 'with-files', label: t('remove.withFiles')");
+    expect(removeFlow).toContain('remove.messageCompleted');
   });
 
   it('批量删除文案告知「只有选删除任务和文件才删文件」+ 删除成功后清理选择', () => {
@@ -192,6 +195,23 @@ describe('可用性判据与删除语义：唯一实现，不在组件里重写�
     expect(contextMenu).toContain("emit('removed', result.succeeded)");
     expect(view).toContain('@removed="removeIds"');
     expect(selection).toContain('function removeIds(ids: string[]): void');
+  });
+
+  /**
+   * 2026-11-13 技术债护栏：删除流程曾被整段写回 view，把 TaskListView.vue 从 299 行
+   * 顶到 337 行（超出 300 行门禁）。这里直接断言「视图不得再出现任何删除实现」，
+   * 比只查「有没有第二个 ref」更硬——后者挡不住 `await tasksStore.remove(...)` 这种
+   * 不带 ref 的内联重写，而内联重写正是本次把行数顶爆的那一类。
+   */
+  it('删除实现只存在于 useRemoveFlow：view 内零 tasksStore.remove / deleteFilesFromKey', () => {
+    expect(removeFlowCode).toContain('await tasksStore.remove(');
+    expect(removeFlowCode).toContain('deleteFilesFromKey(key)');
+    expect(viewCode).not.toContain('tasksStore.remove(');
+    expect(viewCode).not.toContain('deleteFilesFromKey');
+    // 视图只做接线（拿到 requestRemove / confirmRemove 传给行与确认框）
+    expect(viewCode).toContain('useRemoveFlow()');
+    expect(viewCode).toContain(':actions="removeActions"');
+    expect(viewCode).toContain('@select="confirmRemove"');
   });
 });
 
